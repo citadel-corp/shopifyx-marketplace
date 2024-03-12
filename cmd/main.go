@@ -20,9 +20,15 @@ func main() {
 	slog.SetDefault(slog.New(slogHandler))
 
 	// Connect to database
-	_, err := db.Connect(os.Getenv("DB_URL"))
+	db, err := db.Connect(os.Getenv("DB_URL"))
 	if err != nil {
 		slog.Error(fmt.Sprintf("Cannot connect to database: %v", err))
+	}
+
+	// Create migrations
+	err = db.UpMigration()
+	if err != nil {
+		slog.Error(fmt.Sprintf("Up migration failed: %v", err))
 	}
 
 	mux := http.NewServeMux()
