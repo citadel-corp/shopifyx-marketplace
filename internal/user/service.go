@@ -10,13 +10,13 @@ import (
 )
 
 type Service struct {
-	repository Repository
+	Repository Repository
 }
 
 func (s *Service) Create(ctx context.Context, req CreateUserPayload) (*UserResponse, error) {
 	err := req.Validate()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", ErrValidationFailed, err)
 	}
 	hashedPassword, err := password.Hash(req.Password)
 	if err != nil {
@@ -27,7 +27,7 @@ func (s *Service) Create(ctx context.Context, req CreateUserPayload) (*UserRespo
 		Name:           req.Name,
 		HashedPassword: hashedPassword,
 	}
-	err = s.repository.Create(ctx, user)
+	err = s.Repository.Create(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (s *Service) Create(ctx context.Context, req CreateUserPayload) (*UserRespo
 }
 
 func (s *Service) Login(req LoginPayload) (*UserResponse, error) {
-	user, err := s.repository.GetByUsername(req.Username)
+	user, err := s.Repository.GetByUsername(req.Username)
 	if err != nil {
 		return nil, err
 	}

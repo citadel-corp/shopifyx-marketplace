@@ -5,6 +5,12 @@ import (
 	"net/http"
 )
 
+type ResponseBody struct {
+	Message string `json:"message"`
+	Data    any    `json:"data,omitempty"`
+	Error   string `json:"error,omitempty"`
+}
+
 func JSON(w http.ResponseWriter, status int, data any) error {
 	return JSONWithHeaders(w, status, data, nil)
 }

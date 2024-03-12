@@ -14,7 +14,7 @@ type Repository interface {
 }
 
 type DBRepository struct {
-	db *db.DB
+	Db *db.DB
 }
 
 // Create implements Repository.
@@ -27,7 +27,7 @@ func (d *DBRepository) Create(ctx context.Context, user *User) error {
 		)
 		RETURNING id;
 	`
-	row := d.db.DB().QueryRowContext(ctx, createUserQuery, user.Username, user.Name, user.HashedPassword)
+	row := d.Db.DB().QueryRowContext(ctx, createUserQuery, user.Username, user.Name, user.HashedPassword)
 	var id int
 	err := row.Scan(&id)
 	var pgErr *pgconn.PgError

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/db"
+	"github.com/citadel-corp/shopifyx-marketplace/internal/user"
 )
 
 func main() {
@@ -37,6 +38,19 @@ func main() {
 		w.Header().Add("Content-Type", "text")
 		io.WriteString(w, "Service ready")
 	})
+
+	// initialize user domain
+	userRepository := &user.DBRepository{
+		Db: db,
+	}
+	userService := user.Service{
+		Repository: userRepository,
+	}
+	userHandler := &user.Handler{
+		Service: userService,
+	}
+
+	mux.HandleFunc("POST /v1/user/register", userHandler.CreateUser)
 
 	httpServer := &http.Server{
 		Addr:     ":8000",
