@@ -11,11 +11,25 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/citadel-corp/shopifyx-marketplace/internal/common/db"
 )
 
 func main() {
 	slogHandler := slog.NewTextHandler(os.Stdout, nil)
 	slog.SetDefault(slog.New(slogHandler))
+
+	// Connect to database
+	db, err := db.Connect(os.Getenv("DB_URL"))
+	if err != nil {
+		slog.Error(fmt.Sprintf("Cannot connect to database: %v", err))
+	}
+
+	// Create migrations
+	err = db.UpMigration()
+	if err != nil {
+		slog.Error(fmt.Sprintf("Up migration failed: %v", err))
+	}
 
 	mux := http.NewServeMux()
 
