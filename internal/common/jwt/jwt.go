@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	key     = os.Getenv("JWT_SECRET")
+	key     = []byte(os.Getenv("JWT_SECRET"))
 	baseURL = os.Getenv("BASE_URL")
 
 	ErrUnknownClaims = errors.New("unknown claims type")
