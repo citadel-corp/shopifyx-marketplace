@@ -1,12 +1,19 @@
 package user
 
-import "github.com/citadel-corp/shopifyx-marketplace/internal/common/password"
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/citadel-corp/shopifyx-marketplace/internal/common/jwt"
+	"github.com/citadel-corp/shopifyx-marketplace/internal/common/password"
+)
 
 type Service struct {
 	repository Repository
 }
 
-func (s *Service) Create(req CreateUserPayload) (*UserResponse, error) {
+func (s *Service) Create(ctx context.Context, req CreateUserPayload) (*UserResponse, error) {
 	err := req.Validate()
 	if err != nil {
 		return nil, err
@@ -20,15 +27,19 @@ func (s *Service) Create(req CreateUserPayload) (*UserResponse, error) {
 		Name:           req.Name,
 		HashedPassword: hashedPassword,
 	}
-	err = s.repository.Create(user)
+	err = s.repository.Create(ctx, user)
 	if err != nil {
 		return nil, err
 	}
 	// create access token with signed jwt
+	accessToken, err := jwt.Sign(time.Hour*24, fmt.Sprint(user.ID))
+	if err != nil {
+		return nil, err
+	}
 	return &UserResponse{
 		Username:    req.Username,
 		Name:        req.Name,
-		AccessToken: "TODO",
+		AccessToken: accessToken,
 	}, nil
 }
 
