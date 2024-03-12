@@ -55,6 +55,7 @@ func (db *DB) UpMigration() error {
 		return err
 	}
 
+	limit := 0
 	for {
 		if err = m.Up(); err != nil {
 			err = db.migrationErrorHandler(err, m)
@@ -62,6 +63,12 @@ func (db *DB) UpMigration() error {
 		if err == nil {
 			slog.Info("Successfully running up migrations.")
 			return nil
+		}
+
+		limit += 1
+		if limit == 5 {
+			slog.Error("Failed running up migrations.")
+			return err
 		}
 	}
 }
@@ -72,6 +79,7 @@ func (db *DB) DownMigration() error {
 		return err
 	}
 
+	limit := 0
 	for {
 		if err = m.Down(); err != nil {
 			err = db.migrationErrorHandler(err, m)
@@ -79,6 +87,12 @@ func (db *DB) DownMigration() error {
 		if err == nil {
 			slog.Info("Successfully running down migrations.")
 			return nil
+		}
+
+		limit += 1
+		if limit == 5 {
+			slog.Error("Failed running down migrations.")
+			return err
 		}
 	}
 }
