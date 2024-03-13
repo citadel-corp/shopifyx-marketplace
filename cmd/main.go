@@ -35,15 +35,9 @@ func main() {
 	}
 
 	// initialize user domain
-	userRepository := &user.DBRepository{
-		Db: db,
-	}
-	userService := user.Service{
-		Repository: userRepository,
-	}
-	userHandler := &user.Handler{
-		Service: userService,
-	}
+	userRepository := user.NewRepository(db)
+	userService := user.NewService(userRepository)
+	userHandler := user.NewHandler(userService)
 
 	// initialize product domain
 	productRepository := product.NewRepository(db)

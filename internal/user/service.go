@@ -9,11 +9,20 @@ import (
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/password"
 )
 
-type Service struct {
-	Repository Repository
+type Service interface {
+	Create(ctx context.Context, req CreateUserPayload) (*UserResponse, error)
+	Login(ctx context.Context, req LoginPayload) (*UserResponse, error)
 }
 
-func (s *Service) Create(ctx context.Context, req CreateUserPayload) (*UserResponse, error) {
+type userService struct {
+	repository Repository
+}
+
+func NewService(repository Repository) Service {
+	return &userService{repository: repository}
+}
+
+func (s *userService) Create(ctx context.Context, req CreateUserPayload) (*UserResponse, error) {
 	err := req.Validate()
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrValidationFailed, err)
@@ -27,7 +36,7 @@ func (s *Service) Create(ctx context.Context, req CreateUserPayload) (*UserRespo
 		Name:           req.Name,
 		HashedPassword: hashedPassword,
 	}
-	err = s.Repository.Create(ctx, user)
+	err = s.repository.Create(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -43,12 +52,12 @@ func (s *Service) Create(ctx context.Context, req CreateUserPayload) (*UserRespo
 	}, nil
 }
 
-func (s *Service) Login(ctx context.Context, req LoginPayload) (*UserResponse, error) {
+func (s *userService) Login(ctx context.Context, req LoginPayload) (*UserResponse, error) {
 	err := req.Validate()
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrValidationFailed, err)
 	}
-	user, err := s.Repository.GetByUsername(ctx, req.Username)
+	user, err := s.repository.GetByUsername(ctx, req.Username)
 	if err != nil {
 		return nil, err
 	}

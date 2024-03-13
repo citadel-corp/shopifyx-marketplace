@@ -9,7 +9,11 @@ import (
 )
 
 type Handler struct {
-	Service Service
+	service Service
+}
+
+func NewHandler(service Service) *Handler {
+	return &Handler{service: service}
 }
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -23,7 +27,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	userResp, err := h.Service.Create(r.Context(), req)
+	userResp, err := h.service.Create(r.Context(), req)
 	if errors.Is(err, ErrUsernameAlreadyExists) {
 		response.JSON(w, http.StatusConflict, response.ResponseBody{
 			Message: "User already exists",
@@ -62,7 +66,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	userResp, err := h.Service.Login(r.Context(), req)
+	userResp, err := h.service.Login(r.Context(), req)
 	if errors.Is(err, ErrUserNotFound) {
 		response.JSON(w, http.StatusNotFound, response.ResponseBody{
 			Message: "Not found",

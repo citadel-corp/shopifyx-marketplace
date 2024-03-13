@@ -14,12 +14,16 @@ type Repository interface {
 	GetByUsername(ctx context.Context, username string) (*User, error)
 }
 
-type DBRepository struct {
-	Db *db.DB
+type dbRepository struct {
+	db *db.DB
+}
+
+func NewRepository(db *db.DB) Repository {
+	return &dbRepository{db: db}
 }
 
 // Create implements Repository.
-func (d *DBRepository) Create(ctx context.Context, user *User) error {
+func (d *dbRepository) Create(ctx context.Context, user *User) error {
 	createUserQuery := `
 		INSERT INTO users (
 			username, name, hashed_password
@@ -28,7 +32,7 @@ func (d *DBRepository) Create(ctx context.Context, user *User) error {
 		)
 		RETURNING id;
 	`
-	row := d.Db.DB().QueryRowContext(ctx, createUserQuery, user.Username, user.Name, user.HashedPassword)
+	row := d.db.DB().QueryRowContext(ctx, createUserQuery, user.Username, user.Name, user.HashedPassword)
 	var id uint64
 	err := row.Scan(&id)
 	var pgErr *pgconn.PgError
@@ -48,12 +52,12 @@ func (d *DBRepository) Create(ctx context.Context, user *User) error {
 }
 
 // GetByUsernameAndHashedPassword implements Repository.
-func (d *DBRepository) GetByUsername(ctx context.Context, username string) (*User, error) {
+func (d *dbRepository) GetByUsername(ctx context.Context, username string) (*User, error) {
 	getUserQuery := `
 		SELECT id, username, name, hashed_password FROM users
 		WHERE username = $1;
 	`
-	row := d.Db.DB().QueryRowContext(ctx, getUserQuery, username)
+	row := d.db.DB().QueryRowContext(ctx, getUserQuery, username)
 	u := &User{}
 	err := row.Scan(&u.ID, &u.Username, &u.Name, &u.HashedPassword)
 	if errors.Is(err, sql.ErrNoRows) {
