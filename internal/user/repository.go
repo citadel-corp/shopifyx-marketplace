@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/db"
@@ -10,7 +11,7 @@ import (
 
 type Repository interface {
 	Create(ctx context.Context, user *User) error
-	GetByUsername(username string) (*User, error)
+	GetByUsername(ctx context.Context, username string) (*User, error)
 }
 
 type DBRepository struct {
@@ -47,6 +48,19 @@ func (d *DBRepository) Create(ctx context.Context, user *User) error {
 }
 
 // GetByUsernameAndHashedPassword implements Repository.
-func (d *DBRepository) GetByUsername(username string) (*User, error) {
-	panic("unimplemented")
+func (d *DBRepository) GetByUsername(ctx context.Context, username string) (*User, error) {
+	getUserQuery := `
+		SELECT id, username, name, hashed_password FROM users
+		WHERE username = $1;
+	`
+	row := d.Db.DB().QueryRowContext(ctx, getUserQuery, username)
+	u := &User{}
+	err := row.Scan(&u.ID, &u.Username, &u.Name, &u.HashedPassword)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrUserNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
 }

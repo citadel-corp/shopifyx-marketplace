@@ -58,6 +58,7 @@ func main() {
 	})
 
 	mux.HandleFunc("POST /v1/user/register", middleware.PanicRecoverer(userHandler.CreateUser))
+	mux.HandleFunc("POST /v1/user/login", middleware.PanicRecoverer(userHandler.Login))
 	mux.HandleFunc("POST /v1/product", middleware.PanicRecoverer(middleware.Authenticate(productHandler.CreateProduct)))
 
 	httpServer := &http.Server{

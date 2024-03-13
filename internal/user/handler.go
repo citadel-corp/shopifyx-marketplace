@@ -50,3 +50,49 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		Data:    userResp,
 	})
 }
+
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+	var req LoginPayload
+
+	err := request.DecodeJSON(w, r, &req)
+	if err != nil {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Message: "Failed to decode JSON",
+			Error:   err.Error(),
+		})
+		return
+	}
+	userResp, err := h.Service.Login(r.Context(), req)
+	if errors.Is(err, ErrUserNotFound) {
+		response.JSON(w, http.StatusNotFound, response.ResponseBody{
+			Message: "Not found",
+			Error:   err.Error(),
+		})
+		return
+	}
+	if errors.Is(err, ErrWrongPassword) {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Message: "Bad request",
+			Error:   err.Error(),
+		})
+		return
+	}
+	if errors.Is(err, ErrValidationFailed) {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Message: "Bad request",
+			Error:   err.Error(),
+		})
+		return
+	}
+	if err != nil {
+		response.JSON(w, http.StatusInternalServerError, response.ResponseBody{
+			Message: "Internal server error",
+			Error:   err.Error(),
+		})
+		return
+	}
+	response.JSON(w, http.StatusOK, response.ResponseBody{
+		Message: "User logged successfully",
+		Data:    userResp,
+	})
+}

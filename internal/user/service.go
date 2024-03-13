@@ -43,8 +43,12 @@ func (s *Service) Create(ctx context.Context, req CreateUserPayload) (*UserRespo
 	}, nil
 }
 
-func (s *Service) Login(req LoginPayload) (*UserResponse, error) {
-	user, err := s.Repository.GetByUsername(req.Username)
+func (s *Service) Login(ctx context.Context, req LoginPayload) (*UserResponse, error) {
+	err := req.Validate()
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrValidationFailed, err)
+	}
+	user, err := s.Repository.GetByUsername(ctx, req.Username)
 	if err != nil {
 		return nil, err
 	}
@@ -53,12 +57,16 @@ func (s *Service) Login(req LoginPayload) (*UserResponse, error) {
 		return nil, err
 	}
 	if !match {
-		return nil, ErrWrongUsernameOrPassword
+		return nil, ErrWrongPassword
 	}
 	// create access token with signed jwt
+	accessToken, err := jwt.Sign(time.Hour*24, fmt.Sprint(user.ID))
+	if err != nil {
+		return nil, err
+	}
 	return &UserResponse{
 		Username:    user.Username,
 		Name:        user.Name,
-		AccessToken: "TODO",
+		AccessToken: accessToken,
 	}, nil
 }
