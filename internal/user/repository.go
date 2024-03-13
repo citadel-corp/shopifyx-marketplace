@@ -28,7 +28,7 @@ func (d *DBRepository) Create(ctx context.Context, user *User) error {
 		RETURNING id;
 	`
 	row := d.Db.DB().QueryRowContext(ctx, createUserQuery, user.Username, user.Name, user.HashedPassword)
-	var id int
+	var id uint64
 	err := row.Scan(&id)
 	var pgErr *pgconn.PgError
 	if err != nil {
