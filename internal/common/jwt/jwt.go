@@ -14,6 +14,7 @@ var (
 	baseURL = os.Getenv("BASE_URL")
 
 	ErrUnknownClaims = errors.New("unknown claims type")
+	ErrTokenInvalid  = errors.New("invalid token")
 )
 
 func Sign(ttl time.Duration, subject string) (string, error) {
@@ -47,7 +48,7 @@ func VerifyAndGetSubject(tokenString string) (string, error) {
 
 	// Checking token validity
 	if !token.Valid {
-		return "", fmt.Errorf("token invalid")
+		return "", ErrTokenInvalid
 	}
 
 	if claims, ok := token.Claims.(*jwt.RegisteredClaims); ok {
