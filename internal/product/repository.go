@@ -21,12 +21,6 @@ func NewRepository(db *db.DB) *DBRepository {
 }
 
 func (d *DBRepository) Create(ctx context.Context, product *Product) error {
-	// fmt.Sprintf(`INSERT INTO products (
-	// 	image_url, stock, conditon, tags, is_purchaseable, price, user_id, created_at
-	// ) VALUES (
-	// 	%v, %v, %3, %v, %v, %v, %v, %v
-	// )`, product.ImageURL, product.Stock, product.Condition.String(), pq.Array(product.Tags), product.IsPurchasable, product.Price, product.User.ID, time.Now())
-
 	err := d.db.StartTx(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`INSERT INTO products (
 				name, image_url, stock, condition, tags, is_purchaseable, price, user_id
