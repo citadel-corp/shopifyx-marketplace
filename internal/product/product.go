@@ -3,8 +3,9 @@ package product
 import (
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/citadel-corp/shopifyx-marketplace/internal/user"
-	"github.com/twinj/uuid"
 )
 
 type Product struct {
