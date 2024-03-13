@@ -10,6 +10,7 @@ import (
 type Product struct {
 	ID            int
 	UUID          uuid.UUID
+	Name          string
 	ImageURL      string
 	Stock         int
 	Condition     Condition
@@ -27,8 +28,6 @@ const (
 	New Condition = iota
 	Second
 )
-
-var Conditions []Condition = []Condition{New, Second}
 
 func (c Condition) String() string {
 	switch c {

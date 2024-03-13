@@ -7,6 +7,8 @@ require (
 	github.com/itgelo/ozzo-validation/v4 v4.3.1
 	github.com/jackc/pgx/v5 v5.5.5
 	github.com/twinj/uuid v1.0.0
+	golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0
+	golang.org/x/tools v0.10.0
 )
 
 require (

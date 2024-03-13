@@ -1,6 +1,8 @@
 package product
 
 import (
+	"math"
+
 	validation "github.com/itgelo/ozzo-validation/v4"
 	"github.com/itgelo/ozzo-validation/v4/is"
 )
@@ -22,8 +24,8 @@ func (p CreateProductPayload) Validate() error {
 		validation.Field(&p.Price, validation.Required.Error(ErrorRequiredField.Message), validation.Min(0)),
 		validation.Field(&p.ImageURL, validation.Required.Error(ErrorRequiredField.Message), is.URL),
 		validation.Field(&p.Stock, validation.Required.Error(ErrorRequiredField.Message), validation.Min(0)),
-		validation.Field(&p.Condition, validation.Required.Error(ErrorRequiredField.Message), validation.In(Conditions)),
-		validation.Field(&p.Tags, validation.Required.Error(ErrorRequiredField.Message), validation.Length(0, 0)),
+		validation.Field(&p.Condition, validation.Required.Error(ErrorRequiredField.Message), validation.In(New.String(), Second.String())),
+		validation.Field(&p.Tags, validation.Required.Error(ErrorRequiredField.Message), validation.Length(0, math.MaxInt)),
 		validation.Field(&p.IsPurchasable, validation.Required.Error(ErrorRequiredField.Message)),
 		validation.Field(&p.UserID, validation.Required.Error(ErrorUnauthorized.Message)),
 	)

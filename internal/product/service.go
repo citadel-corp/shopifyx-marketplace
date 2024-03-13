@@ -1,15 +1,27 @@
 package product
 
 import (
+	"context"
+	"log/slog"
+
 	"github.com/citadel-corp/shopifyx-marketplace/internal/user"
 )
 
-type Service struct {
+type ProductService struct {
 	repository Repository
 }
 
-func (s *Service) Create(req CreateProductPayload) *Error {
+type Service interface {
+	Create(ctx context.Context, req CreateProductPayload) Response
+}
+
+func NewService(repository Repository) Service {
+	return &ProductService{repository: repository}
+}
+
+func (s *ProductService) Create(ctx context.Context, req CreateProductPayload) Response {
 	product := &Product{
+		Name:          req.Name,
 		ImageURL:      req.ImageURL,
 		Stock:         req.Stock,
 		Condition:     ToCondition(req.Condition),
@@ -21,10 +33,11 @@ func (s *Service) Create(req CreateProductPayload) *Error {
 		},
 	}
 
-	err := s.repository.Create(product)
+	err := s.repository.Create(ctx, product)
 	if err != nil {
-		return &ErrorInternal
+		slog.Error(err.Error())
+		return ErrorInternal
 	}
 
-	return nil
+	return SuccessResponse
 }

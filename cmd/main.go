@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/db"
+	"github.com/citadel-corp/shopifyx-marketplace/internal/common/middleware"
+	"github.com/citadel-corp/shopifyx-marketplace/internal/product"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/user"
 )
 
@@ -50,7 +52,13 @@ func main() {
 		Service: userService,
 	}
 
+	// initialize product domain
+	productRepository := product.NewRepository(db)
+	productService := product.NewService(productRepository)
+	productHandler := product.NewHandler(productService)
+
 	mux.HandleFunc("POST /v1/user/register", userHandler.CreateUser)
+	mux.HandleFunc("POST /v1/product", middleware.Authenticate(productHandler.CreateProduct))
 
 	httpServer := &http.Server{
 		Addr:     ":8000",
