@@ -14,6 +14,7 @@ var (
 	baseURL = os.Getenv("BASE_URL")
 
 	ErrUnknownClaims = errors.New("unknown claims type")
+	ErrTokenInvalid  = errors.New("invalid token")
 )
 
 func Sign(ttl time.Duration, subject string) (string, error) {
@@ -34,18 +35,23 @@ func Sign(ttl time.Duration, subject string) (string, error) {
 }
 
 func VerifyAndGetSubject(tokenString string) (string, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// Don't forget to validate the alg is what you expect:
+	token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
+
 		return key, nil
 	})
 	if err != nil {
 		return "", err
 	}
-	if claims, ok := token.Claims.(jwt.RegisteredClaims); ok {
+
+	// Checking token validity
+	if !token.Valid {
+		return "", ErrTokenInvalid
+	}
+
+	if claims, ok := token.Claims.(*jwt.RegisteredClaims); ok {
 		return claims.Subject, nil
 	} else {
 		return "", ErrUnknownClaims
