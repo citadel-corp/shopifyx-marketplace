@@ -34,13 +34,6 @@ func main() {
 		slog.Error(fmt.Sprintf("Up migration failed: %v", err))
 	}
 
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "text")
-		io.WriteString(w, "Service ready")
-	})
-
 	// initialize user domain
 	userRepository := &user.DBRepository{
 		Db: db,
@@ -57,8 +50,15 @@ func main() {
 	productService := product.NewService(productRepository)
 	productHandler := product.NewHandler(productService)
 
-	mux.HandleFunc("POST /v1/user/register", userHandler.CreateUser)
-	mux.HandleFunc("POST /v1/product", middleware.Authenticate(productHandler.CreateProduct))
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "text")
+		io.WriteString(w, "Service ready")
+	})
+
+	mux.HandleFunc("POST /v1/user/register", middleware.PanicRecoverer(userHandler.CreateUser))
+	mux.HandleFunc("POST /v1/product", middleware.PanicRecoverer(middleware.Authenticate(productHandler.CreateProduct)))
 
 	httpServer := &http.Server{
 		Addr:     ":8000",
