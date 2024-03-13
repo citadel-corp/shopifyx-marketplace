@@ -1,15 +1,22 @@
 package user
 
-import "github.com/citadel-corp/shopifyx-marketplace/internal/common/password"
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/citadel-corp/shopifyx-marketplace/internal/common/jwt"
+	"github.com/citadel-corp/shopifyx-marketplace/internal/common/password"
+)
 
 type Service struct {
-	repository Repository
+	Repository Repository
 }
 
-func (s *Service) Create(req CreateUserPayload) (*UserResponse, error) {
+func (s *Service) Create(ctx context.Context, req CreateUserPayload) (*UserResponse, error) {
 	err := req.Validate()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", ErrValidationFailed, err)
 	}
 	hashedPassword, err := password.Hash(req.Password)
 	if err != nil {
@@ -20,20 +27,24 @@ func (s *Service) Create(req CreateUserPayload) (*UserResponse, error) {
 		Name:           req.Name,
 		HashedPassword: hashedPassword,
 	}
-	err = s.repository.Create(user)
+	err = s.Repository.Create(ctx, user)
 	if err != nil {
 		return nil, err
 	}
 	// create access token with signed jwt
+	accessToken, err := jwt.Sign(time.Hour*24, fmt.Sprint(user.ID))
+	if err != nil {
+		return nil, err
+	}
 	return &UserResponse{
 		Username:    req.Username,
 		Name:        req.Name,
-		AccessToken: "TODO",
+		AccessToken: accessToken,
 	}, nil
 }
 
 func (s *Service) Login(req LoginPayload) (*UserResponse, error) {
-	user, err := s.repository.GetByUsername(req.Username)
+	user, err := s.Repository.GetByUsername(req.Username)
 	if err != nil {
 		return nil, err
 	}
