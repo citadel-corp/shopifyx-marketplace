@@ -16,49 +16,43 @@ var (
 	ErrUnknownClaims = errors.New("unknown claims type")
 )
 
-// Data that will be in the token
-type UserClaim struct {
-	jwt.RegisteredClaims
-	ID string
-}
-
 func Sign(ttl time.Duration, subject string) (string, error) {
 	now := time.Now()
 	expiry := now.Add(ttl)
 	t := jwt.NewWithClaims(
 		jwt.SigningMethodHS256,
-		UserClaim{
-			RegisteredClaims: jwt.RegisteredClaims{
-				IssuedAt:  jwt.NewNumericDate(now),
-				NotBefore: jwt.NewNumericDate(now),
-				ExpiresAt: jwt.NewNumericDate(expiry),
-				Issuer:    baseURL,
-				Audience:  jwt.ClaimStrings{baseURL},
-				Subject:   subject,
-			},
-			ID: subject,
+		jwt.RegisteredClaims{
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(expiry),
+			Issuer:    baseURL,
+			Audience:  jwt.ClaimStrings{baseURL},
+			Subject:   subject,
 		},
 	)
 	return t.SignedString(key)
 }
 
-func VerifyAndGetSubject(tokenString string) (*UserClaim, error) {
-	var userClaim UserClaim
-	token, err := jwt.ParseWithClaims(tokenString, &userClaim, func(token *jwt.Token) (interface{}, error) {
-		// if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-		// 	return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
-		// }
+func VerifyAndGetSubject(tokenString string) (string, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
 
 		return key, nil
 	})
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	// Checking token validity
 	if !token.Valid {
-		return nil, fmt.Errorf("token invalid")
+		return "", fmt.Errorf("token invalid")
 	}
 
-	return &userClaim, nil
+	if claims, ok := token.Claims.(*jwt.RegisteredClaims); ok {
+		return claims.Subject, nil
+	} else {
+		return "", ErrUnknownClaims
+	}
 }
