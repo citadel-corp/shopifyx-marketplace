@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	bankaccount "github.com/citadel-corp/shopifyx-marketplace/internal/bank_account"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/db"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/middleware"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/product"
@@ -45,6 +46,11 @@ func main() {
 	productService := product.NewService(productRepository)
 	productHandler := product.NewHandler(productService)
 
+	// initialize bank account domain
+	bankAccountRepository := bankaccount.NewRepository(db)
+	bankAccountService := bankaccount.NewService(bankAccountRepository)
+	bankAccountHandler := bankaccount.NewHandler(bankAccountService)
+
 	r := mux.NewRouter()
 	v1 := r.PathPrefix("/v1").Subrouter()
 
@@ -60,8 +66,12 @@ func main() {
 
 	// product routes
 	pr := v1.PathPrefix("/product").Subrouter()
-	pr.HandleFunc("", middleware.Authenticate(productHandler.CreateProduct)).Methods(http.MethodPost)
-	pr.HandleFunc("", middleware.Authenticate(productHandler.GetProductList)).Methods(http.MethodGet)
+	pr.HandleFunc("", middleware.PanicRecoverer(middleware.Authenticate(productHandler.CreateProduct))).Methods(http.MethodPost)
+	pr.HandleFunc("", middleware.PanicRecoverer(middleware.Authenticate(productHandler.GetProductList))).Methods(http.MethodGet)
+
+	// bank routes
+	br := v1.PathPrefix("/bank").Subrouter()
+	br.HandleFunc("/account", middleware.PanicRecoverer(middleware.Authenticate(bankAccountHandler.CreateBankAccount))).Methods(http.MethodPost)
 
 	httpServer := &http.Server{
 		Addr:     ":8000",
