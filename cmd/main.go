@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	bankaccount "github.com/citadel-corp/shopifyx-marketplace/internal/bank_account"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/db"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/middleware"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/product"
@@ -44,6 +45,11 @@ func main() {
 	productService := product.NewService(productRepository)
 	productHandler := product.NewHandler(productService)
 
+	// initialize bank account domain
+	bankAccountRepository := bankaccount.NewRepository(db)
+	bankAccountService := bankaccount.NewService(bankAccountRepository)
+	bankAccountHandler := bankaccount.NewHandler(bankAccountService)
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +59,10 @@ func main() {
 
 	mux.HandleFunc("POST /v1/user/register", middleware.PanicRecoverer(userHandler.CreateUser))
 	mux.HandleFunc("POST /v1/user/login", middleware.PanicRecoverer(userHandler.Login))
+
 	mux.HandleFunc("POST /v1/product", middleware.PanicRecoverer(middleware.Authenticate(productHandler.CreateProduct)))
+
+	mux.HandleFunc("POST /v1/bank/account", middleware.PanicRecoverer(middleware.Authenticate(bankAccountHandler.CreateBankAccount)))
 
 	httpServer := &http.Server{
 		Addr:     ":8000",
