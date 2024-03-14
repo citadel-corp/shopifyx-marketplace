@@ -9,6 +9,7 @@ import (
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/middleware"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/request"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/response"
+	"github.com/gorilla/schema"
 )
 
 type Handler struct {
@@ -53,7 +54,46 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	resp = h.service.Create(r.Context(), req)
 	response.JSON(w, resp.Code, response.ResponseBody{
 		Message: resp.Message,
-		Data:    resp.Data,
+	})
+}
+
+func (h *Handler) GetProductList(w http.ResponseWriter, r *http.Request) {
+	var req ListProductPayload
+	var resp Response
+	var err error
+
+	userID, err := getUserID(r)
+	if err != nil {
+		slog.Error(err.Error())
+		response.JSON(w, http.StatusInternalServerError, response.ResponseBody{})
+		return
+	}
+
+	newSchema := schema.NewDecoder()
+	newSchema.IgnoreUnknownKeys(true)
+	if err = newSchema.Decode(&req, r.URL.Query()); err != nil {
+		slog.Error(err.Error())
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{})
+		return
+	}
+
+	req.UserID = userID
+
+	slog.Info("req", req.Search)
+
+	err = req.Validate()
+	if err != nil {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Error: err.Error(),
+		})
+		return
+	}
+
+	data, pagination, resp := h.service.List(r.Context(), req)
+	response.JSON(w, resp.Code, response.ResponseBody{
+		Message: resp.Message,
+		Data:    data,
+		Meta:    pagination,
 	})
 }
 

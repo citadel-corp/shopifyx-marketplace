@@ -17,6 +17,7 @@ import (
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/middleware"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/product"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/user"
+	"github.com/gorilla/mux"
 )
 
 func main() {
@@ -50,23 +51,31 @@ func main() {
 	bankAccountService := bankaccount.NewService(bankAccountRepository)
 	bankAccountHandler := bankaccount.NewHandler(bankAccountService)
 
-	mux := http.NewServeMux()
+	r := mux.NewRouter()
+	v1 := r.PathPrefix("/v1").Subrouter()
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text")
 		io.WriteString(w, "Service ready")
 	})
 
-	mux.HandleFunc("POST /v1/user/register", middleware.PanicRecoverer(userHandler.CreateUser))
-	mux.HandleFunc("POST /v1/user/login", middleware.PanicRecoverer(userHandler.Login))
+	// user routes
+	ur := v1.PathPrefix("/user").Subrouter()
+	ur.HandleFunc("/register", middleware.PanicRecoverer(userHandler.CreateUser)).Methods(http.MethodPost)
+	ur.HandleFunc("/login", middleware.PanicRecoverer(userHandler.Login)).Methods(http.MethodPost)
 
-	mux.HandleFunc("POST /v1/product", middleware.PanicRecoverer(middleware.Authenticate(productHandler.CreateProduct)))
+	// product routes
+	pr := v1.PathPrefix("/product").Subrouter()
+	pr.HandleFunc("", middleware.PanicRecoverer(middleware.Authenticate(productHandler.CreateProduct))).Methods(http.MethodPost)
+	pr.HandleFunc("", middleware.PanicRecoverer(middleware.Authenticate(productHandler.GetProductList))).Methods(http.MethodGet)
 
-	mux.HandleFunc("POST /v1/bank/account", middleware.PanicRecoverer(middleware.Authenticate(bankAccountHandler.CreateBankAccount)))
+	// bank routes
+	br := v1.PathPrefix("/bank").Subrouter()
+	br.HandleFunc("/account", middleware.PanicRecoverer(middleware.Authenticate(bankAccountHandler.CreateBankAccount))).Methods(http.MethodPost)
 
 	httpServer := &http.Server{
 		Addr:     ":8000",
-		Handler:  mux,
+		Handler:  r,
 		ErrorLog: slog.NewLogLogger(slogHandler, slog.LevelError),
 	}
 
