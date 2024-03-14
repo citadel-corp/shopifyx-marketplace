@@ -70,6 +70,8 @@ func (h *Handler) GetProductList(w http.ResponseWriter, r *http.Request) {
 
 	req.UserID = userID
 
+	// TODO: read query params
+
 	err = req.Validate()
 	if err != nil {
 		response.JSON(w, http.StatusBadRequest, response.ResponseBody{

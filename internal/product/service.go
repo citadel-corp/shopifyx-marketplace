@@ -26,7 +26,7 @@ func (s *ProductService) Create(ctx context.Context, req CreateProductPayload) R
 		Name:          req.Name,
 		ImageURL:      req.ImageURL,
 		Stock:         req.Stock,
-		Condition:     ToCondition(req.Condition),
+		Condition:     req.Condition,
 		Tags:          req.Tags,
 		IsPurchasable: req.IsPurchasable,
 		Price:         req.Price,
@@ -47,21 +47,18 @@ func (s *ProductService) Create(ctx context.Context, req CreateProductPayload) R
 func (s *ProductService) List(ctx context.Context, req ListProductPayload) ([]ProductResponse, *response.Pagination, Response) {
 	var listProductsResponse []ProductResponse
 
-	products, err := s.repository.List(ctx, req)
+	products, pagination, err := s.repository.List(ctx, req)
 	if err != nil {
-		if len(products) == 0 {
-			return listProductsResponse, nil, ErrorNoRecords
-		}
+		slog.Error("error fetching products list: %v", err)
+		return nil, nil, ErrorInternal
+	}
+
+	if len(products) == 0 {
+		return listProductsResponse, nil, ErrorNoRecords
 	}
 
 	for i := range products {
 		listProductsResponse = append(listProductsResponse, CreateProductResponse(products[i]))
-	}
-
-	pagination := &response.Pagination{
-		Limit:  req.Limit,
-		Offset: req.Offset,
-		Total:  len(listProductsResponse),
 	}
 
 	return listProductsResponse, pagination, SuccessListResponse

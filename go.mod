@@ -8,6 +8,7 @@ require (
 	github.com/itgelo/ozzo-validation/v4 v4.3.1
 	github.com/jackc/pgx/v5 v5.5.5
 	github.com/lib/pq v1.10.9
+	golang.org/x/tools v0.10.0
 )
 
 require (
