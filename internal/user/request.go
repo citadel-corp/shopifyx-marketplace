@@ -20,3 +20,10 @@ type LoginPayload struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
+
+func (p LoginPayload) Validate() error {
+	return validation.ValidateStruct(&p,
+		validation.Field(&p.Username, validation.Required, validation.Length(5, 15)),
+		validation.Field(&p.Password, validation.Required, validation.Length(5, 15)),
+	)
+}
