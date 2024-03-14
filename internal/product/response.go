@@ -15,6 +15,7 @@ type Response struct {
 var (
 	SuccessCreateResponse = Response{Code: 200, Message: "Product created successfully"}
 	SuccessListResponse   = Response{Code: 200, Message: "Products fetched successfully"}
+	SuccessPatchResponse  = Response{Code: 200, Message: "Product patched successfully"}
 )
 
 type ProductResponse struct {

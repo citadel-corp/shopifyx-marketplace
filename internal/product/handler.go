@@ -9,6 +9,8 @@ import (
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/middleware"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/request"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/response"
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 )
 
@@ -94,6 +96,55 @@ func (h *Handler) GetProductList(w http.ResponseWriter, r *http.Request) {
 		Message: resp.Message,
 		Data:    resp.Data,
 		Meta:    resp.Meta,
+	})
+}
+
+func (h *Handler) PatchProduct(w http.ResponseWriter, r *http.Request) {
+	var req UpdateProductPayload
+	var resp Response
+	var err error
+
+	userID, err := getUserID(r)
+	if err != nil {
+		slog.Error(err.Error())
+		response.JSON(w, http.StatusInternalServerError, response.ResponseBody{})
+		return
+	}
+
+	req.UserID = userID
+
+	err = request.DecodeJSON(w, r, &req)
+	if err != nil {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Message: "Failed to decode JSON",
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	params := mux.Vars(r)
+	uid, err := uuid.Parse(params["productId"])
+	if err != nil {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Message: "Failed to parse UUID",
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	req.ProductUID = uid
+
+	err = req.Validate()
+	if err != nil {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Error: err.Error(),
+		})
+		return
+	}
+
+	resp = h.service.Update(r.Context(), req)
+	response.JSON(w, resp.Code, response.ResponseBody{
+		Message: resp.Message,
 	})
 }
 

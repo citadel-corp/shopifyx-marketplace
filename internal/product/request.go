@@ -3,6 +3,7 @@ package product
 import (
 	"math"
 
+	"github.com/google/uuid"
 	validation "github.com/itgelo/ozzo-validation/v4"
 	"github.com/itgelo/ozzo-validation/v4/is"
 )
@@ -66,5 +67,29 @@ func (p ListProductPayload) Validate() error {
 		validation.Field(&p.OrderBy, validation.In("asc", "dsc")),
 		validation.Field(&p.Limit, validation.When(p.Offset != 0, validation.Required.Error(ErrorRequiredField.Message))),
 		validation.Field(&p.Offset, validation.When(p.Limit != 0, validation.NotNil.Error(ErrorRequiredField.Message))),
+	)
+}
+
+type UpdateProductPayload struct {
+	ProductUID    uuid.UUID `json:"-"`
+	Name          string    `json:"name,omitempty"`
+	Price         int       `json:"price,omitempty"`
+	ImageURL      string    `json:"imageUrl,omitempty"`
+	Condition     Condition `json:"condition,omitempty"`
+	Tags          []string  `json:"tags,omitempty"`
+	IsPurchasable bool      `json:"isPurchasable,omitempty"`
+	UserID        uint64    `json:"-"`
+}
+
+func (p UpdateProductPayload) Validate() error {
+	return validation.ValidateStruct(&p,
+		validation.Field(&p.ProductUID, validation.Required.Error(ErrorRequiredField.Message)),
+		validation.Field(&p.Name, validation.Required.Error(ErrorRequiredField.Message), validation.Length(5, 60)),
+		validation.Field(&p.Price, validation.Required.Error(ErrorRequiredField.Message), validation.Min(0)),
+		validation.Field(&p.ImageURL, validation.Required.Error(ErrorRequiredField.Message), is.URL),
+		validation.Field(&p.Condition, validation.Required.Error(ErrorRequiredField.Message), validation.In(Conditions...)),
+		validation.Field(&p.Tags, validation.Required.Error(ErrorRequiredField.Message), validation.Length(0, math.MaxInt)),
+		validation.Field(&p.IsPurchasable, validation.Required.Error(ErrorRequiredField.Message)),
+		validation.Field(&p.UserID, validation.Required.Error(ErrorUnauthorized.Message)),
 	)
 }
