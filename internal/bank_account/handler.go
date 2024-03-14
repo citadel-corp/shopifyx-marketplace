@@ -9,6 +9,8 @@ import (
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/middleware"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/request"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/response"
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 type Handler struct {
@@ -27,7 +29,7 @@ func (h *Handler) CreateBankAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req CreateBankAccountPayload
+	var req CreateUpdateBankAccountPayload
 
 	err = request.DecodeJSON(w, r, &req)
 	if err != nil {
@@ -55,6 +57,133 @@ func (h *Handler) CreateBankAccount(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, response.ResponseBody{
 		Message: "success",
 		Data:    bankAccountResp,
+	})
+}
+
+func (h *Handler) ListBankAccount(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserID(r)
+	if err != nil {
+		slog.Error(err.Error())
+		response.JSON(w, http.StatusInternalServerError, response.ResponseBody{})
+		return
+	}
+
+	bankAccountResp, err := h.service.List(r.Context(), userID)
+	if err != nil {
+		response.JSON(w, http.StatusInternalServerError, response.ResponseBody{
+			Message: "Internal server error",
+			Error:   err.Error(),
+		})
+		return
+	}
+	response.JSON(w, http.StatusOK, response.ResponseBody{
+		Message: "success",
+		Data:    bankAccountResp,
+	})
+}
+
+func (h *Handler) PartialUpdateBankAccount(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserID(r)
+	if err != nil {
+		slog.Error(err.Error())
+		response.JSON(w, http.StatusInternalServerError, response.ResponseBody{})
+		return
+	}
+	params := mux.Vars(r)
+	uid, err := uuid.Parse(params["uuid"])
+	if err != nil {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Message: "Failed to parse UUID",
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	var req CreateUpdateBankAccountPayload
+
+	err = request.DecodeJSON(w, r, &req)
+	if err != nil {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Message: "Failed to decode JSON",
+			Error:   err.Error(),
+		})
+		return
+	}
+	bankAccountResp, err := h.service.PartialUpdate(r.Context(), req, uid, userID)
+	if errors.Is(err, ErrValidationFailed) {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Message: "Bad request",
+			Error:   err.Error(),
+		})
+		return
+	}
+	if errors.Is(err, ErrNotFound) {
+		response.JSON(w, http.StatusNotFound, response.ResponseBody{
+			Message: "Not found",
+			Error:   err.Error(),
+		})
+		return
+	}
+	if errors.Is(err, ErrForbidden) {
+		response.JSON(w, http.StatusForbidden, response.ResponseBody{
+			Message: "Forbidden",
+			Error:   err.Error(),
+		})
+		return
+	}
+	if err != nil {
+		response.JSON(w, http.StatusInternalServerError, response.ResponseBody{
+			Message: "Internal server error",
+			Error:   err.Error(),
+		})
+		return
+	}
+	response.JSON(w, http.StatusOK, response.ResponseBody{
+		Message: "account updated successfully",
+		Data:    bankAccountResp,
+	})
+}
+
+func (h *Handler) DeleteBankAccount(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserID(r)
+	if err != nil {
+		slog.Error(err.Error())
+		response.JSON(w, http.StatusInternalServerError, response.ResponseBody{})
+		return
+	}
+	params := mux.Vars(r)
+	uid, err := uuid.Parse(params["uuid"])
+	if err != nil {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Message: "Failed to parse UUID",
+			Error:   err.Error(),
+		})
+		return
+	}
+	err = h.service.Delete(r.Context(), uid, userID)
+	if errors.Is(err, ErrNotFound) {
+		response.JSON(w, http.StatusNotFound, response.ResponseBody{
+			Message: "Not found",
+			Error:   err.Error(),
+		})
+		return
+	}
+	if errors.Is(err, ErrForbidden) {
+		response.JSON(w, http.StatusForbidden, response.ResponseBody{
+			Message: "Forbidden",
+			Error:   err.Error(),
+		})
+		return
+	}
+	if err != nil {
+		response.JSON(w, http.StatusInternalServerError, response.ResponseBody{
+			Message: "Internal server error",
+			Error:   err.Error(),
+		})
+		return
+	}
+	response.JSON(w, http.StatusOK, response.ResponseBody{
+		Message: "account deleted successfully",
 	})
 }
 
