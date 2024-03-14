@@ -72,6 +72,9 @@ func main() {
 	// bank routes
 	br := v1.PathPrefix("/bank").Subrouter()
 	br.HandleFunc("/account", middleware.PanicRecoverer(middleware.Authenticate(bankAccountHandler.CreateBankAccount))).Methods(http.MethodPost)
+	br.HandleFunc("/account", middleware.PanicRecoverer(middleware.Authenticate(bankAccountHandler.ListBankAccount))).Methods(http.MethodGet)
+	br.HandleFunc("/account/{uuid}", middleware.PanicRecoverer(middleware.Authenticate(bankAccountHandler.PartialUpdateBankAccount))).Methods(http.MethodPatch)
+	br.HandleFunc("/account/{uuid}", middleware.PanicRecoverer(middleware.Authenticate(bankAccountHandler.DeleteBankAccount))).Methods(http.MethodDelete)
 
 	httpServer := &http.Server{
 		Addr:     ":8000",
