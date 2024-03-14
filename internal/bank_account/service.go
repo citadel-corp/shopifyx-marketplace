@@ -12,7 +12,7 @@ type Service interface {
 	Create(ctx context.Context, req CreateUpdateBankAccountPayload, userID uint64) (*BankAccountResponse, error)
 	List(ctx context.Context, userID uint64) ([]*BankAccountResponse, error)
 	PartialUpdate(ctx context.Context, req CreateUpdateBankAccountPayload, uuid uuid.UUID, userID uint64) (*BankAccountResponse, error)
-	Delete(ctx context.Context, uuid uuid.UUID) error
+	Delete(ctx context.Context, uuid uuid.UUID, userID uint64) error
 }
 
 type bankAccountService struct {
@@ -50,7 +50,14 @@ func (s *bankAccountService) Create(ctx context.Context, req CreateUpdateBankAcc
 }
 
 // Delete implements Service.
-func (s *bankAccountService) Delete(ctx context.Context, uuid uuid.UUID) error {
+func (s *bankAccountService) Delete(ctx context.Context, uuid uuid.UUID, userID uint64) error {
+	bankAccount, err := s.repository.GetByUUID(ctx, uuid)
+	if err != nil {
+		return err
+	}
+	if bankAccount.User.ID != userID {
+		return ErrForbidden
+	}
 	return s.repository.Delete(ctx, uuid)
 }
 
@@ -83,7 +90,7 @@ func (s *bankAccountService) PartialUpdate(ctx context.Context, req CreateUpdate
 		return nil, err
 	}
 	if bankAccount.User.ID != userID {
-		return nil, ErrUnauthorized
+		return nil, ErrForbidden
 	}
 	s.applyPartialUpdate(req, bankAccount)
 	err = s.repository.Update(ctx, bankAccount)

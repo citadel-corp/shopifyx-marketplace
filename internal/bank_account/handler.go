@@ -122,10 +122,11 @@ func (h *Handler) PartialUpdateBankAccount(w http.ResponseWriter, r *http.Reques
 			Message: "Not found",
 			Error:   err.Error(),
 		})
+		return
 	}
-	if errors.Is(err, ErrUnauthorized) {
-		response.JSON(w, http.StatusUnauthorized, response.ResponseBody{
-			Message: "Unauthorized",
+	if errors.Is(err, ErrForbidden) {
+		response.JSON(w, http.StatusForbidden, response.ResponseBody{
+			Message: "Forbidden",
 			Error:   err.Error(),
 		})
 		return
@@ -144,6 +145,12 @@ func (h *Handler) PartialUpdateBankAccount(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *Handler) DeleteBankAccount(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserID(r)
+	if err != nil {
+		slog.Error(err.Error())
+		response.JSON(w, http.StatusInternalServerError, response.ResponseBody{})
+		return
+	}
 	params := mux.Vars(r)
 	uid, err := uuid.Parse(params["uuid"])
 	if err != nil {
@@ -153,7 +160,7 @@ func (h *Handler) DeleteBankAccount(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	err = h.service.Delete(r.Context(), uid)
+	err = h.service.Delete(r.Context(), uid, userID)
 	if errors.Is(err, ErrNotFound) {
 		response.JSON(w, http.StatusNotFound, response.ResponseBody{
 			Message: "Not found",
@@ -161,9 +168,9 @@ func (h *Handler) DeleteBankAccount(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	if errors.Is(err, ErrUnauthorized) {
-		response.JSON(w, http.StatusUnauthorized, response.ResponseBody{
-			Message: "Unauthorized",
+	if errors.Is(err, ErrForbidden) {
+		response.JSON(w, http.StatusForbidden, response.ResponseBody{
+			Message: "Forbidden",
 			Error:   err.Error(),
 		})
 		return
