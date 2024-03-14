@@ -8,12 +8,15 @@ import (
 
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/db"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/response"
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
 type Repository interface {
 	Create(ctx context.Context, product *Product) error
 	List(ctx context.Context, filter ListProductPayload) ([]Product, *response.Pagination, error)
+	Update(ctx context.Context, product *Product) error
+	GetByUUID(ctx context.Context, uuid uuid.UUID) (*Product, error)
 }
 
 type DBRepository struct {
@@ -205,6 +208,43 @@ func (d *DBRepository) List(ctx context.Context, filter ListProductPayload) ([]P
 	}
 
 	return products, pagination, nil
+}
+
+func (d *DBRepository) Update(ctx context.Context, product *Product) error {
+	err := d.db.StartTx(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec(`
+				UPDATE products
+				SET name = $1,
+				price = $2,
+				image_url = $3,
+				condition = $4,
+				tags = $5
+				WHERE uid = $6
+				AND user_id = $7;
+			`,
+			product.Name, product.Price, product.ImageURL, product.Condition, pq.Array(product.Tags), product.UUID, product.User.ID)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	return err
+}
+
+func (d *DBRepository) GetByUUID(ctx context.Context, uuid uuid.UUID) (*Product, error) {
+	row := d.db.DB().QueryRowContext(ctx, `
+		SELECT p.uid, p.user_id, p.name, p.price, p.image_url, p.stock, p.condition, p.tags, p.is_purchaseable, p.purchase_count
+		FROM products p
+		WHERE uid = $1;
+	`, uuid)
+
+	var p Product
+	err := row.Scan(&p.UUID, &p.User.ID, &p.Name, &p.Price, &p.ImageURL, &p.Stock, &p.Condition, pq.Array(&p.Tags), &p.IsPurchasable, &p.PurchaseCount)
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
 }
 
 func insertWhereStatement(condition bool, statement string) string {

@@ -16,12 +16,17 @@ func Authenticate(next func(w http.ResponseWriter, r *http.Request)) func(w http
 
 		tokenString := r.Header.Get("Authorization")
 		if tokenString == "" {
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(http.StatusUnauthorized)
 			slog.InfoContext(r.Context(), "Missing authorization header")
 			return
 		}
 
 		tokenString = tokenString[len("Bearer "):]
+		if tokenString == "" {
+			w.WriteHeader(http.StatusUnauthorized)
+			slog.InfoContext(r.Context(), "Missing authorization header")
+			return
+		}
 
 		subject, err := jwt.VerifyAndGetSubject(tokenString)
 		if err != nil {
