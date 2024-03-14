@@ -16,6 +16,7 @@ import (
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/middleware"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/product"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/user"
+	"github.com/gorilla/mux"
 )
 
 func main() {
@@ -44,21 +45,27 @@ func main() {
 	productService := product.NewService(productRepository)
 	productHandler := product.NewHandler(productService)
 
-	mux := http.NewServeMux()
+	r := mux.NewRouter()
+	v1 := r.PathPrefix("/v1").Subrouter()
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text")
 		io.WriteString(w, "Service ready")
 	})
 
-	mux.HandleFunc("POST /v1/user/register", middleware.PanicRecoverer(userHandler.CreateUser))
-	mux.HandleFunc("POST /v1/user/login", middleware.PanicRecoverer(userHandler.Login))
-	mux.HandleFunc("POST /v1/product", middleware.Authenticate(productHandler.CreateProduct))
-	mux.HandleFunc("GET /v1/product", middleware.Authenticate(productHandler.GetProductList))
+	// user routes
+	ur := v1.PathPrefix("/user").Subrouter()
+	ur.HandleFunc("/register", middleware.PanicRecoverer(userHandler.CreateUser)).Methods(http.MethodPost)
+	ur.HandleFunc("/login", middleware.PanicRecoverer(userHandler.Login)).Methods(http.MethodPost)
+
+	// product routes
+	pr := v1.PathPrefix("/product").Subrouter()
+	pr.HandleFunc("", middleware.Authenticate(productHandler.CreateProduct)).Methods(http.MethodPost)
+	pr.HandleFunc("", middleware.Authenticate(productHandler.GetProductList)).Methods(http.MethodGet)
 
 	httpServer := &http.Server{
 		Addr:     ":8000",
-		Handler:  mux,
+		Handler:  r,
 		ErrorLog: slog.NewLogLogger(slogHandler, slog.LevelError),
 	}
 
