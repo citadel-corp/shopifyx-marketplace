@@ -1,10 +1,15 @@
 package product
 
-import "github.com/google/uuid"
+import (
+	"github.com/citadel-corp/shopifyx-marketplace/internal/common/response"
+	"github.com/google/uuid"
+)
 
 type Response struct {
 	Code    int
 	Message string
+	Data    any
+	Meta    *response.Pagination
 }
 
 var (
