@@ -89,11 +89,11 @@ func (h *Handler) GetProductList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, pagination, resp := h.service.List(r.Context(), req)
+	resp = h.service.List(r.Context(), req)
 	response.JSON(w, resp.Code, response.ResponseBody{
 		Message: resp.Message,
-		Data:    data,
-		Meta:    pagination,
+		Data:    resp.Data,
+		Meta:    resp.Meta,
 	})
 }
 

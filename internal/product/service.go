@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/citadel-corp/shopifyx-marketplace/internal/common/response"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/user"
 )
 
@@ -14,7 +13,7 @@ type ProductService struct {
 
 type Service interface {
 	Create(ctx context.Context, req CreateProductPayload) Response
-	List(ctx context.Context, req ListProductPayload) ([]ProductResponse, *response.Pagination, Response)
+	List(ctx context.Context, req ListProductPayload) Response
 }
 
 func NewService(repository Repository) Service {
@@ -44,22 +43,26 @@ func (s *ProductService) Create(ctx context.Context, req CreateProductPayload) R
 	return SuccessCreateResponse
 }
 
-func (s *ProductService) List(ctx context.Context, req ListProductPayload) ([]ProductResponse, *response.Pagination, Response) {
+func (s *ProductService) List(ctx context.Context, req ListProductPayload) Response {
 	var listProductsResponse []ProductResponse
 
 	products, pagination, err := s.repository.List(ctx, req)
 	if err != nil {
 		slog.Error("error fetching products list: %v", err)
-		return nil, nil, ErrorInternal
+		return ErrorInternal
 	}
 
 	if len(products) == 0 {
-		return listProductsResponse, nil, ErrorNoRecords
+		return ErrorNoRecords
 	}
 
 	for i := range products {
 		listProductsResponse = append(listProductsResponse, CreateProductResponse(products[i]))
 	}
 
-	return listProductsResponse, pagination, SuccessListResponse
+	resp := SuccessListResponse
+	resp.Data = listProductsResponse
+	resp.Meta = pagination
+
+	return resp
 }
