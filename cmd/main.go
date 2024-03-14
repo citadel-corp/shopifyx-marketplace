@@ -52,13 +52,15 @@ func main() {
 		Service: userService,
 	}
 
+	mux.HandleFunc("POST /v1/user/register", userHandler.CreateUser)
+
 	// initialize product domain
 	productRepository := product.NewRepository(db)
 	productService := product.NewService(productRepository)
 	productHandler := product.NewHandler(productService)
 
-	mux.HandleFunc("POST /v1/user/register", userHandler.CreateUser)
 	mux.HandleFunc("POST /v1/product", middleware.Authenticate(productHandler.CreateProduct))
+	mux.HandleFunc("GET /v1/product", middleware.Authenticate(productHandler.GetProductList))
 
 	httpServer := &http.Server{
 		Addr:     ":8000",
