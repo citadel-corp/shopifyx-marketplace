@@ -9,6 +9,7 @@ import (
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/middleware"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/request"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/response"
+	"github.com/gorilla/schema"
 )
 
 type Handler struct {
@@ -68,9 +69,17 @@ func (h *Handler) GetProductList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	newSchema := schema.NewDecoder()
+	newSchema.IgnoreUnknownKeys(true)
+	if err = newSchema.Decode(&req, r.URL.Query()); err != nil {
+		slog.Error(err.Error())
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{})
+		return
+	}
+
 	req.UserID = userID
 
-	// TODO: read query params
+	slog.Info("req", req.Search)
 
 	err = req.Validate()
 	if err != nil {

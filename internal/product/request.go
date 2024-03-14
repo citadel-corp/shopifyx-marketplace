@@ -42,18 +42,18 @@ var (
 var productSortBys []interface{} = []interface{}{SortByPrice, SortByDate}
 
 type ListProductPayload struct {
-	UserOnly       bool
+	UserOnly       bool `schema:"userOnly" binding:"omitempty"`
 	UserID         uint64
-	Tags           []string
-	Condition      Condition
-	ShowEmptyStock bool
-	MinPrice       int
-	MaxPrice       int
-	Search         string
-	Limit          int
-	Offset         int
-	SortBy         productSortBy
-	OrderBy        string
+	Tags           []string      `schema:"tags" binding:"omitempty"`
+	Condition      Condition     `schema:"condition" binding:"omitempty"`
+	ShowEmptyStock bool          `schema:"showEmptyStock" binding:"omitempty"`
+	MinPrice       int           `schema:"minPrice" binding:"omitempty"`
+	MaxPrice       int           `schema:"maxPrice" binding:"omitempty"`
+	Search         string        `schema:"search" binding:"omitempty"`
+	Limit          int           `schema:"limit" binding:"omitempty"`
+	Offset         int           `schema:"offset" binding:"omitempty"`
+	SortBy         productSortBy `schema:"sortBy" binding:"omitempty"`
+	OrderBy        string        `schema:"orderBy" binding:"omitempty"`
 }
 
 func (p ListProductPayload) Validate() error {

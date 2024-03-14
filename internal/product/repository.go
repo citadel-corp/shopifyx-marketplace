@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log/slog"
 	"strings"
 
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/db"
@@ -47,7 +46,8 @@ func (d *DBRepository) List(ctx context.Context, filter ListProductPayload) ([]P
 	var pagination *response.Pagination
 
 	var (
-		statement           string
+		selectStatement     string
+		whereStatement      string
 		query               string
 		joinStatement       string
 		orderStatement      string
@@ -57,7 +57,7 @@ func (d *DBRepository) List(ctx context.Context, filter ListProductPayload) ([]P
 	)
 
 	if filter.UserOnly && filter.UserID != 0 {
-		statement = fmt.Sprintf("%s WHERE products.user_id = $%d", statement, columnCtr)
+		whereStatement = fmt.Sprintf("%s WHERE products.user_id = $%d", whereStatement, columnCtr)
 		joinStatement = fmt.Sprintf("%s JOIN users ON users.id = products.user_id", joinStatement)
 		args = append(args, filter.UserID)
 		columnCtr++
@@ -65,44 +65,44 @@ func (d *DBRepository) List(ctx context.Context, filter ListProductPayload) ([]P
 
 	if len(filter.Tags) > 0 {
 		for i := range filter.Tags {
-			statement = insertWhereStatement(i > 0, statement)
-			statement = fmt.Sprintf("%s $%d = ANY(products.tags)", statement, columnCtr)
+			whereStatement = insertWhereStatement(i > 0, whereStatement)
+			whereStatement = fmt.Sprintf("%s $%d = ANY(products.tags)", whereStatement, columnCtr)
 			args = append(args, filter.Tags[i])
 			columnCtr++
 		}
 	}
 
 	if filter.Condition != "" {
-		statement = insertWhereStatement(len(args) > 0, statement)
-		statement = fmt.Sprintf("%s products.condition = $%d", statement, columnCtr)
+		whereStatement = insertWhereStatement(len(args) > 0, whereStatement)
+		whereStatement = fmt.Sprintf("%s products.condition = $%d", whereStatement, columnCtr)
 		args = append(args, filter.Condition)
 		columnCtr++
 	}
 
 	if !filter.ShowEmptyStock {
-		statement = insertWhereStatement(len(args) > 0, statement)
-		statement = fmt.Sprintf("%s products.stock > $%d", statement, columnCtr)
+		whereStatement = insertWhereStatement(len(args) > 0, whereStatement)
+		whereStatement = fmt.Sprintf("%s products.stock > $%d", whereStatement, columnCtr)
 		args = append(args, 0)
 		columnCtr++
 	}
 
 	if filter.MinPrice > 0 {
-		statement = insertWhereStatement(len(args) > 0, statement)
-		statement = fmt.Sprintf("%s products.price > $%d", statement, columnCtr)
+		whereStatement = insertWhereStatement(len(args) > 0, whereStatement)
+		whereStatement = fmt.Sprintf("%s products.price > $%d", whereStatement, columnCtr)
 		args = append(args, filter.MinPrice)
 		columnCtr++
 	}
 
 	if filter.MaxPrice > 0 {
-		statement = insertWhereStatement(len(args) > 0, statement)
-		statement = fmt.Sprintf("%s products.price < $%d", statement, columnCtr)
+		whereStatement = insertWhereStatement(len(args) > 0, whereStatement)
+		whereStatement = fmt.Sprintf("%s products.price < $%d", whereStatement, columnCtr)
 		args = append(args, filter.MaxPrice)
 		columnCtr++
 	}
 
 	if filter.Search != "" {
-		statement = insertWhereStatement(len(args) > 0, statement)
-		statement = fmt.Sprintf("%s lower(products.name) LIKE CONCAT('%%',$%d::text,'%%')", statement, columnCtr)
+		whereStatement = insertWhereStatement(len(args) > 0, whereStatement)
+		whereStatement = fmt.Sprintf("%s lower(products.name) LIKE CONCAT('%%',$%d::text,'%%')", whereStatement, columnCtr)
 		args = append(args, strings.ToLower(filter.Search))
 		columnCtr++
 	}
@@ -134,12 +134,12 @@ func (d *DBRepository) List(ctx context.Context, filter ListProductPayload) ([]P
 	}
 
 	if filter.Limit != 0 {
-		statement = fmt.Sprintf(`
+		selectStatement = fmt.Sprintf(`
 			SELECT COUNT(*) OVER() AS total_count, products.uid as productId, products.name as name, products.image_url as imageUrl, 
 				products.stock as stock, products.condition as condition, products.tags as tags, products.is_purchaseable as isPurchasable, 
 				products.price as price, products.purchase_count as purchaseCount 
 			FROM products 
-		%s`, statement)
+		%s`, selectStatement)
 
 		paginationStatement = fmt.Sprintf("%s LIMIT $%d", paginationStatement, columnCtr)
 		args = append(args, filter.Limit)
@@ -148,14 +148,11 @@ func (d *DBRepository) List(ctx context.Context, filter ListProductPayload) ([]P
 		paginationStatement = fmt.Sprintf("%s OFFSET $%d", paginationStatement, columnCtr)
 		args = append(args, filter.Offset)
 
-		query = fmt.Sprintf("%s %s %s %s;", statement, joinStatement, orderStatement, paginationStatement)
+		query = fmt.Sprintf("%s %s %s %s %s;", selectStatement, joinStatement, whereStatement, orderStatement, paginationStatement)
 
 		// sanitize query
 		query = strings.Replace(query, "\t", "", -1)
 		query = strings.Replace(query, "\n", "", -1)
-
-		slog.Info("query: %v", query)
-		slog.Info("args: %v", args)
 
 		rows, err = d.db.DB().QueryContext(ctx, query, args...)
 		if err != nil {
@@ -171,21 +168,18 @@ func (d *DBRepository) List(ctx context.Context, filter ListProductPayload) ([]P
 			products = append(products, p)
 		}
 	} else {
-		statement = fmt.Sprintf(`
+		selectStatement = fmt.Sprintf(`
 			SELECT products.uid as productId, products.name as name, products.image_url as imageUrl, 
 				products.stock as stock, products.condition as condition, products.tags as tags, products.is_purchaseable as isPurchasable, 
 				products.price as price, products.purchase_count as purchaseCount 
 			FROM products 
-		%s`, statement)
+		%s`, selectStatement)
 
-		query = fmt.Sprintf("%s %s %s %s;", statement, joinStatement, orderStatement, paginationStatement)
+		query = fmt.Sprintf("%s %s %s %s %s;", selectStatement, joinStatement, whereStatement, orderStatement, paginationStatement)
 
 		// sanitize query
 		query = strings.Replace(query, "\t", "", -1)
 		query = strings.Replace(query, "\n", "", -1)
-
-		slog.Info("query: %v", query)
-		slog.Info("args: %v", args)
 
 		rows, err = d.db.DB().QueryContext(ctx, query, args...)
 		if err != nil {
