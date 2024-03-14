@@ -19,7 +19,7 @@ type ProductResponse struct {
 	Stock         int       `json:"stock"`
 	Condition     Condition `json:"condition"`
 	Tags          []string  `json:"tags"`
-	IsPurchasable bool      `json:"isPurchaseable"`
+	IsPurchasable bool      `json:"isPurchasable"`
 	Price         int       `json:"price"`
 	PurchaseCount int       `json:"purchaseCount"`
 }

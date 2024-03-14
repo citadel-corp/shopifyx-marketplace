@@ -23,31 +23,11 @@ type Product struct {
 	CreatedAt     time.Time
 }
 
-type Condition int64
+type Condition string
 
 const (
-	New Condition = iota
-	Second
+	New    Condition = "new"
+	Second Condition = "second"
 )
 
-func (c Condition) String() string {
-	switch c {
-	case New:
-		return "new"
-	case Second:
-		return "second"
-	default:
-		return ""
-	}
-}
-
-func ToCondition(s string) Condition {
-	switch s {
-	case "new":
-		return New
-	case "second":
-		return Second
-	default:
-		return 0
-	}
-}
+var Conditions []interface{} = []interface{}{New, Second}
