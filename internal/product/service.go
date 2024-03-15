@@ -134,11 +134,7 @@ func (s *ProductService) Get(ctx context.Context, req GetProductPayload) Respons
 		return ErrorInternal
 	}
 
-	if user == nil {
-		return ErrorForbidden
-	}
-
-	accts, err := s.bankRepository.List(ctx, user.ID)
+	accts, err := s.bankRepository.List(ctx, product.User.ID)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
 			slog.Error("error fetching product: %v", err)
@@ -158,7 +154,7 @@ func (s *ProductService) Get(ctx context.Context, req GetProductPayload) Respons
 			Price:         product.Price,
 			PurchaseCount: product.PurchaseCount,
 		},
-		Seller: CreateSellerResponse(*user, accts),
+		Seller: CreateSellerResponse(user, accts),
 	}
 
 	resp := SuccessGetResponse

@@ -54,14 +54,20 @@ type SellerResponse struct {
 	BankAccounts     []bankaccount.BankAccountResponse `json:"bankAccounts"`
 }
 
-func CreateSellerResponse(user user.User, bankAccounts []*bankaccount.BankAccount) SellerResponse {
+func CreateSellerResponse(user *user.User, bankAccounts []*bankaccount.BankAccount) SellerResponse {
+	if user == nil {
+		return SellerResponse{}
+	}
+
 	accts := make([]bankaccount.BankAccountResponse, len(bankAccounts))
 	for i, bankAccount := range bankAccounts {
-		accts[i] = bankaccount.BankAccountResponse{
-			BankAccountID:     bankAccount.UUID.String(),
-			BankName:          bankAccount.BankName,
-			BankAccountName:   bankAccount.BankAccountName,
-			BankAccountNumber: bankAccount.BankAccountNumber,
+		if bankAccount != nil {
+			accts[i] = bankaccount.BankAccountResponse{
+				BankAccountID:     bankAccount.UUID.String(),
+				BankName:          bankAccount.BankName,
+				BankAccountName:   bankAccount.BankAccountName,
+				BankAccountNumber: bankAccount.BankAccountNumber,
+			}
 		}
 	}
 
