@@ -103,3 +103,21 @@ func (p GetProductPayload) Validate() error {
 		validation.Field(&p.ProductUID, validation.Required.Error(ErrorRequiredField.Message)),
 	)
 }
+
+type PurchaseProductPayload struct {
+	ProductUID           uuid.UUID
+	BankAccountID        uuid.UUID `json:"bankAccountId"`
+	PaymentProofImageURL string    `json:"paymentProofImage"`
+	Quantity             int       `json:"quantity"`
+	BuyerID              uint64
+	SellerID             uint64
+}
+
+func (p PurchaseProductPayload) Validate() error {
+	return validation.ValidateStruct(&p,
+		validation.Field(&p.BankAccountID, validation.Required.Error(ErrorRequiredField.Message), is.UUID),
+		validation.Field(&p.PaymentProofImageURL, validation.Required.Error(ErrorRequiredField.Message), is.URL),
+		validation.Field(&p.Quantity, validation.Required.Error(ErrorRequiredField.Message), validation.Min(1)),
+		validation.Field(&p.BuyerID, validation.Required.Error(ErrorForbidden.Message)),
+	)
+}

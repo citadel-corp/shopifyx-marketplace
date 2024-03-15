@@ -21,6 +21,7 @@ type Service interface {
 	List(ctx context.Context, req ListProductPayload) Response
 	Update(ctx context.Context, req UpdateProductPayload) Response
 	Get(ctx context.Context, req GetProductPayload) Response
+	Purchase(ctx context.Context, req PurchaseProductPayload) Response
 }
 
 func NewService(repository Repository, userRepository user.Repository, bankRepository bankaccount.Repository) Service {
@@ -161,4 +162,36 @@ func (s *ProductService) Get(ctx context.Context, req GetProductPayload) Respons
 	resp.Data = data
 
 	return resp
+}
+
+func (s *ProductService) Purchase(ctx context.Context, req PurchaseProductPayload) Response {
+	// get product
+	product, err := s.repository.GetByUUID(ctx, req.ProductUID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrorNoRecords
+		}
+		slog.Error("error fetching product: %v", err)
+		return ErrorInternal
+	}
+
+	if !product.IsPurchasable {
+		return ErrorNotPurchasable
+	}
+
+	if product.Stock < req.Quantity {
+		return ErrorInsufficientStock
+	}
+
+	req.SellerID = product.User.ID
+
+	// TODO: check bank account validity
+
+	err = s.repository.Purchase(ctx, req)
+	if err != nil {
+		slog.Error("error fetching product: %v", err)
+		return ErrorInternal
+	}
+
+	return SuccessPurchaseResponse
 }
