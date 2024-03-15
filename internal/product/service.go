@@ -130,9 +130,6 @@ func (s *ProductService) Get(ctx context.Context, req GetProductPayload) Respons
 
 	user, err := s.userRepository.GetByID(ctx, product.User.ID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return ErrorForbidden
-		}
 		slog.Error("error fetching product: %v", err)
 		return ErrorInternal
 	}
