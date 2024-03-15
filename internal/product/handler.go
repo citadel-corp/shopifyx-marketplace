@@ -65,6 +65,7 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, resp.Code, response.ResponseBody{
 		Message: resp.Message,
 	})
+	return
 }
 
 func (h *Handler) GetProductList(w http.ResponseWriter, r *http.Request) {
@@ -80,9 +81,9 @@ func (h *Handler) GetProductList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := getUserID(r)
-	if err != nil {
-		if req.UserOnly {
+	if req.UserOnly {
+		userID, err := getUserID(r)
+		if err != nil {
 			switch {
 			case errors.Is(err, ErrorUnauthorized.Error):
 				response.JSON(w, ErrorUnauthorized.Code, response.ResponseBody{})
@@ -95,9 +96,8 @@ func (h *Handler) GetProductList(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+		req.UserID = userID
 	}
-
-	req.UserID = userID
 
 	err = req.Validate()
 	if err != nil {
@@ -113,6 +113,7 @@ func (h *Handler) GetProductList(w http.ResponseWriter, r *http.Request) {
 		Data:    resp.Data,
 		Meta:    resp.Meta,
 	})
+	return
 }
 
 func (h *Handler) PatchProduct(w http.ResponseWriter, r *http.Request) {
@@ -170,6 +171,7 @@ func (h *Handler) PatchProduct(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, resp.Code, response.ResponseBody{
 		Message: resp.Message,
 	})
+	return
 }
 
 func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
@@ -202,6 +204,7 @@ func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
 		Message: resp.Message,
 		Data:    resp.Data,
 	})
+	return
 }
 
 func (h *Handler) PurchaseProduct(w http.ResponseWriter, r *http.Request) {
@@ -260,6 +263,7 @@ func (h *Handler) PurchaseProduct(w http.ResponseWriter, r *http.Request) {
 		Message: resp.Message,
 		Data:    resp.Data,
 	})
+	return
 }
 
 func (h *Handler) UpdateStockProduct(w http.ResponseWriter, r *http.Request) {
@@ -318,6 +322,7 @@ func (h *Handler) UpdateStockProduct(w http.ResponseWriter, r *http.Request) {
 		Message: resp.Message,
 		Data:    resp.Data,
 	})
+	return
 }
 
 func (h *Handler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
@@ -367,6 +372,7 @@ func (h *Handler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 		Message: resp.Message,
 		Data:    resp.Data,
 	})
+	return
 }
 
 func getUserID(r *http.Request) (uint64, error) {
