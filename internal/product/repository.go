@@ -17,6 +17,8 @@ type Repository interface {
 	List(ctx context.Context, filter ListProductPayload) ([]Product, *response.Pagination, error)
 	Update(ctx context.Context, product *Product) error
 	GetByUUID(ctx context.Context, uuid uuid.UUID) (*Product, error)
+	Patch(ctx context.Context, product *Product) error
+	Purchase(ctx context.Context, data PurchaseProductPayload) error
 }
 
 type DBRepository struct {
@@ -245,6 +247,89 @@ func (d *DBRepository) GetByUUID(ctx context.Context, uuid uuid.UUID) (*Product,
 		return nil, err
 	}
 	return &p, nil
+}
+
+func (d *DBRepository) Patch(ctx context.Context, product *Product) error {
+	var columnCount int = 1
+	var args []interface{}
+
+	query := "UPDATE products SET"
+
+	if product.PurchaseCount != 0 {
+		query = fmt.Sprintf("%v purchase_count = $%d")
+		args = append(args, product.PurchaseCount)
+		columnCount++
+	}
+
+	if product.Stock != 0 {
+		if len(args) > 0 {
+			query = fmt.Sprintf("%v, ", query)
+		}
+		query = fmt.Sprintf("%v stock = $%d")
+		args = append(args, product.Stock)
+		columnCount++
+	}
+
+	query = fmt.Sprintf("%v WHERE uid = $%d;",
+		query, columnCount)
+	args = append(args, product.UUID)
+
+	err := d.db.StartTx(ctx, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, query, args...)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *DBRepository) Purchase(ctx context.Context, data PurchaseProductPayload) error {
+	err := d.db.StartTx(ctx, func(tx *sql.Tx) error {
+		// update product sold total
+		_, err := tx.ExecContext(ctx, `
+			UPDATE products
+			SET purchase_count = purchase_count + $1,
+			stock = stock - $2
+			WHERE uid = $3
+		`, data.Quantity, data.Quantity, data.ProductUID)
+		if err != nil {
+			return err
+		}
+
+		// update user transactions
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO user_transactions (
+				user_id, product_id, bank_account_id, image_url
+			) VALUES (
+				$1, $2, $3, $4
+			)
+		`, data.BuyerID, data.ProductUID, data.BankAccountID, data.PaymentProofImageURL)
+		if err != nil {
+			return err
+		}
+
+		// update seller
+		_, err = tx.ExecContext(ctx, `
+			UPDATE users
+			SET product_sold_total = product_sold_total + $1
+			WHERE id = $2
+		`, data.Quantity, data.SellerID)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func insertWhereStatement(condition bool, statement string) string {
