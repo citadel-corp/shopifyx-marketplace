@@ -6,21 +6,29 @@ import (
 	"errors"
 	"log/slog"
 
+	bankaccount "github.com/citadel-corp/shopifyx-marketplace/internal/bank_account"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/user"
 )
 
 type ProductService struct {
-	repository Repository
+	repository     Repository
+	userRepository user.Repository
+	bankRepository bankaccount.Repository
 }
 
 type Service interface {
 	Create(ctx context.Context, req CreateProductPayload) Response
 	List(ctx context.Context, req ListProductPayload) Response
 	Update(ctx context.Context, req UpdateProductPayload) Response
+	Get(ctx context.Context, req GetProductPayload) Response
 }
 
-func NewService(repository Repository) Service {
-	return &ProductService{repository: repository}
+func NewService(repository Repository, userRepository user.Repository, bankRepository bankaccount.Repository) Service {
+	return &ProductService{
+		repository:     repository,
+		userRepository: userRepository,
+		bankRepository: bankRepository,
+	}
 }
 
 func (s *ProductService) Create(ctx context.Context, req CreateProductPayload) Response {
@@ -85,7 +93,7 @@ func (s *ProductService) Update(ctx context.Context, req UpdateProductPayload) R
 	}
 
 	if oldP.User.ID != req.UserID {
-		return ErrorUnauthorized
+		return ErrorForbidden
 	}
 
 	newP := &Product{
@@ -108,4 +116,56 @@ func (s *ProductService) Update(ctx context.Context, req UpdateProductPayload) R
 	}
 
 	return SuccessPatchResponse
+}
+
+func (s *ProductService) Get(ctx context.Context, req GetProductPayload) Response {
+	product, err := s.repository.GetByUUID(ctx, req.ProductUID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrorNoRecords
+		}
+		slog.Error("error fetching product: %v", err)
+		return ErrorInternal
+	}
+
+	user, err := s.userRepository.GetByID(ctx, product.User.ID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrorForbidden
+		}
+		slog.Error("error fetching product: %v", err)
+		return ErrorInternal
+	}
+
+	if user == nil {
+		return ErrorForbidden
+	}
+
+	accts, err := s.bankRepository.List(ctx, user.ID)
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			slog.Error("error fetching product: %v", err)
+			return ErrorInternal
+		}
+	}
+
+	data := ProductDetailResponse{
+		Product: ProductResponse{
+			UUID:          product.UUID,
+			Name:          product.Name,
+			ImageURL:      product.ImageURL,
+			Stock:         product.Stock,
+			Condition:     product.Condition,
+			Tags:          product.Tags,
+			IsPurchasable: product.IsPurchasable,
+			Price:         product.Price,
+			PurchaseCount: product.PurchaseCount,
+		},
+		Seller: CreateSellerResponse(*user, accts),
+	}
+
+	resp := SuccessGetResponse
+	resp.Data = data
+
+	return resp
 }

@@ -12,6 +12,7 @@ import (
 type Repository interface {
 	Create(ctx context.Context, user *User) error
 	GetByUsername(ctx context.Context, username string) (*User, error)
+	GetByID(ctx context.Context, id uint64) (*User, error)
 }
 
 type dbRepository struct {
@@ -60,6 +61,23 @@ func (d *dbRepository) GetByUsername(ctx context.Context, username string) (*Use
 	row := d.db.DB().QueryRowContext(ctx, getUserQuery, username)
 	u := &User{}
 	err := row.Scan(&u.ID, &u.Username, &u.Name, &u.HashedPassword)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrUserNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
+func (d *dbRepository) GetByID(ctx context.Context, id uint64) (*User, error) {
+	getUserQuery := `
+		SELECT id, username, name, product_sold_total, hashed_password FROM users
+		WHERE id = $1;
+	`
+	row := d.db.DB().QueryRowContext(ctx, getUserQuery, id)
+	u := &User{}
+	err := row.Scan(&u.ID, &u.Username, &u.Name, &u.ProductSoldTotal, &u.HashedPassword)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrUserNotFound
 	}

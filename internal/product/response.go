@@ -1,7 +1,9 @@
 package product
 
 import (
+	bankaccount "github.com/citadel-corp/shopifyx-marketplace/internal/bank_account"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/response"
+	"github.com/citadel-corp/shopifyx-marketplace/internal/user"
 	"github.com/google/uuid"
 )
 
@@ -10,12 +12,14 @@ type Response struct {
 	Message string
 	Data    any
 	Meta    *response.Pagination
+	Error   error
 }
 
 var (
 	SuccessCreateResponse = Response{Code: 200, Message: "Product created successfully"}
 	SuccessListResponse   = Response{Code: 200, Message: "Products fetched successfully"}
 	SuccessPatchResponse  = Response{Code: 200, Message: "Product patched successfully"}
+	SuccessGetResponse    = Response{Code: 200, Message: "Product fetched successfully"}
 )
 
 type ProductResponse struct {
@@ -42,4 +46,33 @@ func CreateProductResponse(product Product) ProductResponse {
 		Price:         product.Price,
 		PurchaseCount: product.PurchaseCount,
 	}
+}
+
+type SellerResponse struct {
+	Name             string                            `json:"name"`
+	ProductSoldTotal int                               `json:"productSoldTotal"`
+	BankAccounts     []bankaccount.BankAccountResponse `json:"bankAccounts"`
+}
+
+func CreateSellerResponse(user user.User, bankAccounts []*bankaccount.BankAccount) SellerResponse {
+	accts := make([]bankaccount.BankAccountResponse, len(bankAccounts))
+	for i, bankAccount := range bankAccounts {
+		accts[i] = bankaccount.BankAccountResponse{
+			BankAccountID:     bankAccount.UUID.String(),
+			BankName:          bankAccount.BankName,
+			BankAccountName:   bankAccount.BankAccountName,
+			BankAccountNumber: bankAccount.BankAccountNumber,
+		}
+	}
+
+	return SellerResponse{
+		Name:             user.Name,
+		ProductSoldTotal: user.ProductSoldTotal,
+		BankAccounts:     accts,
+	}
+}
+
+type ProductDetailResponse struct {
+	Product ProductResponse `json:"product"`
+	Seller  SellerResponse  `json:"seller"`
 }

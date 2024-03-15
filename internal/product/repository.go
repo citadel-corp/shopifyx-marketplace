@@ -115,7 +115,7 @@ func (d *DBRepository) List(ctx context.Context, filter ListProductPayload) ([]P
 		switch filter.OrderBy {
 		case "asc":
 			orderBy = "asc"
-		case "dsc":
+		case "desc":
 			orderBy = "desc"
 		}
 	}
