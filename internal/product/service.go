@@ -34,6 +34,8 @@ func NewService(repository Repository, userRepository user.Repository, bankRepos
 }
 
 func (s *ProductService) Create(ctx context.Context, req CreateProductPayload) Response {
+	serviceName := "product.Create"
+
 	product := &Product{
 		Name:          req.Name,
 		ImageURL:      req.ImageURL,
@@ -49,7 +51,7 @@ func (s *ProductService) Create(ctx context.Context, req CreateProductPayload) R
 
 	err := s.repository.Create(ctx, product)
 	if err != nil {
-		slog.Error(err.Error())
+		slog.Error(serviceName + ": " + err.Error())
 		return ErrorInternal
 	}
 
@@ -57,6 +59,7 @@ func (s *ProductService) Create(ctx context.Context, req CreateProductPayload) R
 }
 
 func (s *ProductService) List(ctx context.Context, req ListProductPayload) Response {
+	serviceName := "product.List"
 	var listProductsResponse []ProductResponse
 
 	products, pagination, err := s.repository.List(ctx, req)
@@ -64,7 +67,7 @@ func (s *ProductService) List(ctx context.Context, req ListProductPayload) Respo
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrorNoRecords
 		}
-		slog.Error("error fetching products list: %v", err)
+		slog.Error("%s: error fetching products list: %v", serviceName, err)
 		return ErrorInternal
 	}
 
@@ -84,13 +87,15 @@ func (s *ProductService) List(ctx context.Context, req ListProductPayload) Respo
 }
 
 func (s *ProductService) Update(ctx context.Context, req UpdateProductPayload) Response {
+	serviceName := "product.Update"
+
 	// get product to authorize
 	oldP, err := s.repository.GetByUUID(ctx, req.ProductUID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrorNotFound
 		}
-		slog.Error("error fetching product: %v", err)
+		slog.Error("%s: error fetching product: %v", serviceName, err)
 		return ErrorInternal
 	}
 
@@ -113,7 +118,7 @@ func (s *ProductService) Update(ctx context.Context, req UpdateProductPayload) R
 
 	err = s.repository.Update(ctx, newP)
 	if err != nil {
-		slog.Error("error patching products list: %v", err)
+		slog.Error("%s: error patching products list: %v", serviceName, err)
 		return ErrorInternal
 	}
 
@@ -121,25 +126,27 @@ func (s *ProductService) Update(ctx context.Context, req UpdateProductPayload) R
 }
 
 func (s *ProductService) Get(ctx context.Context, req GetProductPayload) Response {
+	serviceName := "product.Get"
+
 	product, err := s.repository.GetByUUID(ctx, req.ProductUID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrorNoRecords
 		}
-		slog.Error("error fetching product: %v", err)
+		slog.Error("%s: error fetching product: %v", serviceName, err)
 		return ErrorInternal
 	}
 
 	user, err := s.userRepository.GetByID(ctx, product.User.ID)
 	if err != nil {
-		slog.Error("error fetching product: %v", err)
+		slog.Error("%s: error fetching product: %v", serviceName, err)
 		return ErrorInternal
 	}
 
 	accts, err := s.bankRepository.List(ctx, product.User.ID)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
-			slog.Error("error fetching product: %v", err)
+			slog.Error("%s: error fetching product: %v", serviceName, err)
 			return ErrorInternal
 		}
 	}
@@ -166,13 +173,15 @@ func (s *ProductService) Get(ctx context.Context, req GetProductPayload) Respons
 }
 
 func (s *ProductService) Purchase(ctx context.Context, req PurchaseProductPayload) Response {
+	serviceName := "product.Purchase"
+
 	// get product
 	product, err := s.repository.GetByUUID(ctx, req.ProductUID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrorNotFound
 		}
-		slog.Error("error fetching product: %v", err)
+		slog.Error("%s: error fetching product: %v", serviceName, err)
 		return ErrorInternal
 	}
 
@@ -192,13 +201,13 @@ func (s *ProductService) Purchase(ctx context.Context, req PurchaseProductPayloa
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrorBadRequest
 		}
-		slog.Error("error fetching bank: %v", err)
+		slog.Error("%s: error fetching bank: %v", serviceName, err)
 		return ErrorInternal
 	}
 
 	err = s.repository.Purchase(ctx, req)
 	if err != nil {
-		slog.Error("error purchasing product: %v", err)
+		slog.Error("%s: error purchasing product: %v", serviceName, err)
 		return ErrorInternal
 	}
 
@@ -206,12 +215,14 @@ func (s *ProductService) Purchase(ctx context.Context, req PurchaseProductPayloa
 }
 
 func (s *ProductService) UpdateStock(ctx context.Context, req UpdateStockPayload) Response {
+	serviceName := "product.UpdateStock"
+
 	p, err := s.repository.GetByUUID(ctx, req.ProductUID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrorNotFound
 		}
-		slog.Error("error fetching product: %v", err)
+		slog.Error("%s: error fetching product: %v", serviceName, err)
 		return ErrorInternal
 	}
 
@@ -228,7 +239,7 @@ func (s *ProductService) UpdateStock(ctx context.Context, req UpdateStockPayload
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrorNotFound
 		}
-		slog.Error("error updating stock: %v", err)
+		slog.Error("%s: error updating stock: %v", serviceName, err)
 		return ErrorInternal
 	}
 
