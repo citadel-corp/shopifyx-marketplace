@@ -19,6 +19,7 @@ type Repository interface {
 	GetByUUID(ctx context.Context, uuid uuid.UUID) (*Product, error)
 	Patch(ctx context.Context, product *Product) error
 	Purchase(ctx context.Context, data PurchaseProductPayload) error
+	Delete(ctx context.Context, uid uuid.UUID) error
 }
 
 type DBRepository struct {
@@ -329,6 +330,26 @@ func (d *DBRepository) Purchase(ctx context.Context, data PurchaseProductPayload
 		return err
 	}
 
+	return nil
+}
+
+// Delete implements Repository.
+func (d *DBRepository) Delete(ctx context.Context, uid uuid.UUID) error {
+	deleteQuery := `
+		DELETE FROM products
+		WHERE uid = $1;
+	`
+	row, err := d.db.DB().ExecContext(ctx, deleteQuery, uid)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := row.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
 	return nil
 }
 

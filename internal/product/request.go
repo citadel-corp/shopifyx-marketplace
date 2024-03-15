@@ -134,3 +134,14 @@ func (p UpdateStockPayload) Validate() error {
 		validation.Field(&p.UserID, validation.Required.Error(ErrorForbidden.Message)),
 	)
 }
+
+type DeleteProductPayload struct {
+	ProductUID uuid.UUID
+	UserID     uint64
+}
+
+func (p DeleteProductPayload) Validate() error {
+	return validation.ValidateStruct(&p,
+		validation.Field(&p.UserID, validation.Required.Error(ErrorForbidden.Message)),
+	)
+}

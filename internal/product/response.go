@@ -22,6 +22,7 @@ var (
 	SuccessGetResponse         = Response{Code: 200, Message: "Product fetched successfully"}
 	SuccessPurchaseResponse    = Response{Code: 200, Message: "Product purchased successfully"}
 	SuccessUpdateStockResponse = Response{Code: 200, Message: "Stock updated successfully"}
+	SuccessDeleteResponse      = Response{Code: 200, Message: "Product deleted successfully"}
 )
 
 type ProductResponse struct {

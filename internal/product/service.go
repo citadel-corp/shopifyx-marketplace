@@ -23,6 +23,7 @@ type Service interface {
 	Get(ctx context.Context, req GetProductPayload) Response
 	Purchase(ctx context.Context, req PurchaseProductPayload) Response
 	UpdateStock(ctx context.Context, req UpdateStockPayload) Response
+	Delete(ctx context.Context, req DeleteProductPayload) Response
 }
 
 func NewService(repository Repository, userRepository user.Repository, bankRepository bankaccount.Repository) Service {
@@ -244,4 +245,32 @@ func (s *ProductService) UpdateStock(ctx context.Context, req UpdateStockPayload
 	}
 
 	return SuccessUpdateStockResponse
+}
+
+func (s *ProductService) Delete(ctx context.Context, req DeleteProductPayload) Response {
+	serviceName := "product.Delete"
+
+	product, err := s.repository.GetByUUID(ctx, req.ProductUID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrorNotFound
+		}
+		slog.Error("%s: error fetching product: %v", serviceName, err)
+		return ErrorInternal
+	}
+
+	if product.User.ID != req.UserID {
+		return ErrorForbidden
+	}
+
+	err = s.repository.Delete(ctx, req.ProductUID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrorNotFound
+		}
+		slog.Error("%s: error deleting product: %v", serviceName, err)
+		return ErrorInternal
+	}
+
+	return SuccessDeleteResponse
 }
