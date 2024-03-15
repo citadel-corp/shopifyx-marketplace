@@ -71,6 +71,7 @@ func main() {
 	pr.HandleFunc("/{productId}", middleware.PanicRecoverer(middleware.Authorized(productHandler.PatchProduct))).Methods(http.MethodPatch)
 	pr.HandleFunc("/{productId}", middleware.PanicRecoverer(productHandler.GetProduct)).Methods(http.MethodGet)
 	pr.HandleFunc("/{productId}/buy", middleware.PanicRecoverer(middleware.Authorized(productHandler.PurchaseProduct))).Methods(http.MethodPost)
+	pr.HandleFunc("/{productId}/stock", middleware.PanicRecoverer(middleware.Authorized(productHandler.UpdateStockProduct))).Methods(http.MethodPost)
 
 	// bank routes
 	br := v1.PathPrefix("/bank").Subrouter()

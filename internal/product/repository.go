@@ -256,7 +256,7 @@ func (d *DBRepository) Patch(ctx context.Context, product *Product) error {
 	query := "UPDATE products SET"
 
 	if product.PurchaseCount != 0 {
-		query = fmt.Sprintf("%v purchase_count = $%d")
+		query = fmt.Sprintf("%v purchase_count = $%d", query, columnCount)
 		args = append(args, product.PurchaseCount)
 		columnCount++
 	}
@@ -265,7 +265,7 @@ func (d *DBRepository) Patch(ctx context.Context, product *Product) error {
 		if len(args) > 0 {
 			query = fmt.Sprintf("%v, ", query)
 		}
-		query = fmt.Sprintf("%v stock = $%d")
+		query = fmt.Sprintf("%v stock = $%d", query, columnCount)
 		args = append(args, product.Stock)
 		columnCount++
 	}
