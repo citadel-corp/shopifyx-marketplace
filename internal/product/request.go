@@ -121,3 +121,16 @@ func (p PurchaseProductPayload) Validate() error {
 		validation.Field(&p.BuyerID, validation.Required.Error(ErrorForbidden.Message)),
 	)
 }
+
+type UpdateStockPayload struct {
+	ProductUID uuid.UUID
+	Stock      int `json:"stock"`
+	UserID     uint64
+}
+
+func (p UpdateStockPayload) Validate() error {
+	return validation.ValidateStruct(&p,
+		validation.Field(&p.Stock, validation.Required.Error(ErrorRequiredField.Message), validation.Min(0)),
+		validation.Field(&p.UserID, validation.Required.Error(ErrorForbidden.Message)),
+	)
+}
