@@ -107,7 +107,7 @@ func (p GetProductPayload) Validate() error {
 type PurchaseProductPayload struct {
 	ProductUID           uuid.UUID
 	BankAccountID        uuid.UUID `json:"bankAccountId"`
-	PaymentProofImageURL string    `json:"paymentProofImage"`
+	PaymentProofImageURL string    `json:"paymentProofImageUrl"`
 	Quantity             int       `json:"quantity"`
 	BuyerID              uint64
 	SellerID             uint64

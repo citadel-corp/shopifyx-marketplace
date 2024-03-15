@@ -238,19 +238,19 @@ func (h *Handler) PurchaseProduct(w http.ResponseWriter, r *http.Request) {
 
 	req.ProductUID = uid
 
-	err = req.Validate()
-	if err != nil {
-		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
-			Error: err.Error(),
-		})
-		return
-	}
-
 	err = request.DecodeJSON(w, r, &req)
 	if err != nil {
 		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
 			Message: "Failed to decode JSON",
 			Error:   err.Error(),
+		})
+		return
+	}
+
+	err = req.Validate()
+	if err != nil {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Error: err.Error(),
 		})
 		return
 	}

@@ -294,7 +294,7 @@ func (d *DBRepository) Purchase(ctx context.Context, data PurchaseProductPayload
 		_, err := tx.ExecContext(ctx, `
 			UPDATE products
 			SET purchase_count = purchase_count + $1,
-			stock = stock + $2
+			stock = stock - $2
 			WHERE uid = $3
 		`, data.Quantity, data.Quantity, data.ProductUID)
 		if err != nil {
@@ -317,7 +317,7 @@ func (d *DBRepository) Purchase(ctx context.Context, data PurchaseProductPayload
 		_, err = tx.ExecContext(ctx, `
 			UPDATE users
 			SET product_sold_total = product_sold_total + $1
-			WHERE uid = $2
+			WHERE id = $2
 		`, data.Quantity, data.SellerID)
 		if err != nil {
 			return err

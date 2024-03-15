@@ -191,13 +191,13 @@ func (s *ProductService) Purchase(ctx context.Context, req PurchaseProductPayloa
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrorBadRequest
 		}
-		slog.Error("error fetching product: %v", err)
+		slog.Error("error fetching bank: %v", err)
 		return ErrorInternal
 	}
 
 	err = s.repository.Purchase(ctx, req)
 	if err != nil {
-		slog.Error("error fetching product: %v", err)
+		slog.Error("error purchasing product: %v", err)
 		return ErrorInternal
 	}
 
