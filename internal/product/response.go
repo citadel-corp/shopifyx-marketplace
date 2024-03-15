@@ -17,9 +17,9 @@ type Response struct {
 
 var (
 	SuccessCreateResponse      = Response{Code: 200, Message: "Product created successfully"}
-	SuccessListResponse        = Response{Code: 200, Message: "Products fetched successfully"}
+	SuccessListResponse        = Response{Code: 200, Message: "ok"}
 	SuccessPatchResponse       = Response{Code: 200, Message: "Product patched successfully"}
-	SuccessGetResponse         = Response{Code: 200, Message: "Product fetched successfully"}
+	SuccessGetResponse         = Response{Code: 200, Message: "ok"}
 	SuccessPurchaseResponse    = Response{Code: 200, Message: "Product purchased successfully"}
 	SuccessUpdateStockResponse = Response{Code: 200, Message: "Stock updated successfully"}
 	SuccessDeleteResponse      = Response{Code: 200, Message: "Product deleted successfully"}
