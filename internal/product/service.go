@@ -185,7 +185,15 @@ func (s *ProductService) Purchase(ctx context.Context, req PurchaseProductPayloa
 
 	req.SellerID = product.User.ID
 
-	// TODO: check bank account validity
+	// check bank account validity
+	_, err = s.bankRepository.GetByUUID(ctx, req.BankAccountID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrorBadRequest
+		}
+		slog.Error("error fetching product: %v", err)
+		return ErrorInternal
+	}
 
 	err = s.repository.Purchase(ctx, req)
 	if err != nil {
