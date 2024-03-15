@@ -1,0 +1,1 @@
+ALTER TABLE users ADD COLUMN product_sold_total INT NOT NULL DEFAULT 0;

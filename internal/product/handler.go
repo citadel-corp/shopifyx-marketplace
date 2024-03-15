@@ -29,9 +29,17 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 
 	userID, err := getUserID(r)
 	if err != nil {
-		slog.Error(err.Error())
-		response.JSON(w, http.StatusInternalServerError, response.ResponseBody{})
-		return
+		switch {
+		case errors.Is(err, ErrorUnauthorized.Error):
+			response.JSON(w, ErrorUnauthorized.Code, response.ResponseBody{})
+			return
+		case errors.Is(err, ErrorForbidden.Error):
+			response.JSON(w, ErrorForbidden.Code, response.ResponseBody{})
+			return
+		default:
+			response.JSON(w, http.StatusInternalServerError, response.ResponseBody{})
+			return
+		}
 	}
 
 	req.UserID = userID
@@ -64,13 +72,6 @@ func (h *Handler) GetProductList(w http.ResponseWriter, r *http.Request) {
 	var resp Response
 	var err error
 
-	userID, err := getUserID(r)
-	if err != nil {
-		slog.Error(err.Error())
-		response.JSON(w, http.StatusInternalServerError, response.ResponseBody{})
-		return
-	}
-
 	newSchema := schema.NewDecoder()
 	newSchema.IgnoreUnknownKeys(true)
 	if err = newSchema.Decode(&req, r.URL.Query()); err != nil {
@@ -79,9 +80,24 @@ func (h *Handler) GetProductList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.UserID = userID
+	userID, err := getUserID(r)
+	if err != nil {
+		if req.UserOnly {
+			switch {
+			case errors.Is(err, ErrorUnauthorized.Error):
+				response.JSON(w, ErrorUnauthorized.Code, response.ResponseBody{})
+				return
+			case errors.Is(err, ErrorForbidden.Error):
+				response.JSON(w, ErrorForbidden.Code, response.ResponseBody{})
+				return
+			default:
+				response.JSON(w, http.StatusInternalServerError, response.ResponseBody{})
+				return
+			}
+		}
+	}
 
-	slog.Info("req", req.Search)
+	req.UserID = userID
 
 	err = req.Validate()
 	if err != nil {
@@ -106,9 +122,17 @@ func (h *Handler) PatchProduct(w http.ResponseWriter, r *http.Request) {
 
 	userID, err := getUserID(r)
 	if err != nil {
-		slog.Error(err.Error())
-		response.JSON(w, http.StatusInternalServerError, response.ResponseBody{})
-		return
+		switch {
+		case errors.Is(err, ErrorUnauthorized.Error):
+			response.JSON(w, ErrorUnauthorized.Code, response.ResponseBody{})
+			return
+		case errors.Is(err, ErrorForbidden.Error):
+			response.JSON(w, ErrorForbidden.Code, response.ResponseBody{})
+			return
+		default:
+			response.JSON(w, http.StatusInternalServerError, response.ResponseBody{})
+			return
+		}
 	}
 
 	req.UserID = userID
@@ -148,6 +172,38 @@ func (h *Handler) PatchProduct(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
+	var req GetProductPayload
+	var resp Response
+	var err error
+
+	params := mux.Vars(r)
+	uid, err := uuid.Parse(params["productId"])
+	if err != nil {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Message: "Failed to parse UUID",
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	req.ProductUID = uid
+
+	err = req.Validate()
+	if err != nil {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Error: err.Error(),
+		})
+		return
+	}
+
+	resp = h.service.Get(r.Context(), req)
+	response.JSON(w, resp.Code, response.ResponseBody{
+		Message: resp.Message,
+		Data:    resp.Data,
+	})
+}
+
 func getUserID(r *http.Request) (uint64, error) {
 	var userID uint64
 	var err error
@@ -155,11 +211,17 @@ func getUserID(r *http.Request) (uint64, error) {
 	if authValue, ok := r.Context().Value(middleware.ContextAuthKey{}).(string); ok {
 		userID, err = strconv.ParseUint(authValue, 10, 64)
 		if err != nil {
-			return 0, err
+			slog.Error("getUserID: %v", err)
+			return 0, ErrorInternal.Error
 		}
 	} else {
-		slog.Error("cannot parse auth value from context")
-		return 0, errors.New("cannot parse auth value from context")
+		slog.Error("getUserID: cannot parse auth value from context")
+		return 0, ErrorUnauthorized.Error
+	}
+
+	if userID == 0 {
+		slog.Error("getUserID: userID is not set")
+		return 0, ErrorForbidden.Error
 	}
 
 	return userID, nil

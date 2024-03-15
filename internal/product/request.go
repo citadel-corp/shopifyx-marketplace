@@ -28,7 +28,7 @@ func (p CreateProductPayload) Validate() error {
 		validation.Field(&p.Condition, validation.Required.Error(ErrorRequiredField.Message), validation.In(Conditions...)),
 		validation.Field(&p.Tags, validation.Required.Error(ErrorRequiredField.Message), validation.Length(0, math.MaxInt)),
 		validation.Field(&p.IsPurchasable, validation.Required.Error(ErrorRequiredField.Message)),
-		validation.Field(&p.UserID, validation.Required.Error(ErrorUnauthorized.Message)),
+		validation.Field(&p.UserID, validation.Required.Error(ErrorForbidden.Message)),
 	)
 }
 
@@ -59,12 +59,12 @@ type ListProductPayload struct {
 
 func (p ListProductPayload) Validate() error {
 	return validation.ValidateStruct(&p,
-		validation.Field(&p.UserID, validation.When(p.UserOnly, validation.Required.Error(ErrorUnauthorized.Message))),
+		validation.Field(&p.UserID, validation.When(p.UserOnly, validation.Required.Error(ErrorForbidden.Message))),
 		validation.Field(&p.Condition, validation.In(Conditions...)),
 		validation.Field(&p.MinPrice, validation.When(p.MaxPrice != 0, validation.Max(p.MaxPrice))),
 		validation.Field(&p.MaxPrice, validation.When(p.MinPrice != 0, validation.Min(p.MinPrice))),
 		validation.Field(&p.SortBy, validation.In(productSortBys...)),
-		validation.Field(&p.OrderBy, validation.In("asc", "dsc")),
+		validation.Field(&p.OrderBy, validation.In("asc", "desc")),
 		validation.Field(&p.Limit, validation.When(p.Offset != 0, validation.Required.Error(ErrorRequiredField.Message))),
 		validation.Field(&p.Offset, validation.When(p.Limit != 0, validation.NotNil.Error(ErrorRequiredField.Message))),
 	)
@@ -90,6 +90,16 @@ func (p UpdateProductPayload) Validate() error {
 		validation.Field(&p.Condition, validation.Required.Error(ErrorRequiredField.Message), validation.In(Conditions...)),
 		validation.Field(&p.Tags, validation.Required.Error(ErrorRequiredField.Message), validation.Length(0, math.MaxInt)),
 		validation.Field(&p.IsPurchasable, validation.Required.Error(ErrorRequiredField.Message)),
-		validation.Field(&p.UserID, validation.Required.Error(ErrorUnauthorized.Message)),
+		validation.Field(&p.UserID, validation.Required.Error(ErrorForbidden.Message)),
+	)
+}
+
+type GetProductPayload struct {
+	ProductUID uuid.UUID `json:"-"`
+}
+
+func (p GetProductPayload) Validate() error {
+	return validation.ValidateStruct(&p,
+		validation.Field(&p.ProductUID, validation.Required.Error(ErrorRequiredField.Message)),
 	)
 }

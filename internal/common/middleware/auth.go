@@ -10,7 +10,7 @@ import (
 
 type ContextAuthKey struct{}
 
-func Authenticate(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+func Authorized(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
@@ -25,6 +25,35 @@ func Authenticate(next func(w http.ResponseWriter, r *http.Request)) func(w http
 		if tokenString == "" {
 			w.WriteHeader(http.StatusUnauthorized)
 			slog.InfoContext(r.Context(), "Missing authorization header")
+			return
+		}
+
+		subject, err := jwt.VerifyAndGetSubject(tokenString)
+		if err != nil {
+			w.WriteHeader(http.StatusForbidden)
+			slog.InfoContext(r.Context(), "Invalid token: %v", err)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), ContextAuthKey{}, subject)
+		r = r.WithContext(ctx)
+
+		next(w, r)
+	}
+}
+
+// Authenticate request only if authorization header is set
+func Authenticate(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		tokenString := r.Header.Get("Authorization")
+		if tokenString == "" {
+			return
+		}
+
+		tokenString = tokenString[len("Bearer "):]
+		if tokenString == "" {
 			return
 		}
 
