@@ -12,9 +12,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
 	bankaccount "github.com/citadel-corp/shopifyx-marketplace/internal/bank_account"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/db"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/middleware"
+	"github.com/citadel-corp/shopifyx-marketplace/internal/image"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/product"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/user"
 	"github.com/gorilla/mux"
@@ -28,12 +32,14 @@ func main() {
 	db, err := db.Connect(os.Getenv("DB_URL"))
 	if err != nil {
 		slog.Error(fmt.Sprintf("Cannot connect to database: %v", err))
+		os.Exit(1)
 	}
 
 	// Create migrations
 	err = db.UpMigration()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Up migration failed: %v", err))
+		os.Exit(1)
 	}
 
 	// initialize user domain
@@ -50,6 +56,18 @@ func main() {
 	productRepository := product.NewRepository(db)
 	productService := product.NewService(productRepository, userRepository, bankAccountRepository)
 	productHandler := product.NewHandler(productService)
+
+	// initialize image domain
+	sess, err := session.NewSession(&aws.Config{
+		Region:      aws.String(os.Getenv("S3_REGION")),
+		Credentials: credentials.NewStaticCredentials(os.Getenv("S3_ID"), os.Getenv("S3_SECRET_KEY"), ""),
+	})
+	if err != nil {
+		slog.Error(fmt.Sprintf("Cannot create AWS session: %v", err))
+		os.Exit(1)
+	}
+	imageService := image.NewService(sess)
+	imageHandler := image.NewHandler(imageService)
 
 	r := mux.NewRouter()
 	v1 := r.PathPrefix("/v1").Subrouter()
@@ -79,6 +97,10 @@ func main() {
 	br.HandleFunc("/account", middleware.PanicRecoverer(middleware.Authorized(bankAccountHandler.ListBankAccount))).Methods(http.MethodGet)
 	br.HandleFunc("/account/{uuid}", middleware.PanicRecoverer(middleware.Authorized(bankAccountHandler.PartialUpdateBankAccount))).Methods(http.MethodPatch)
 	br.HandleFunc("/account/{uuid}", middleware.PanicRecoverer(middleware.Authorized(bankAccountHandler.DeleteBankAccount))).Methods(http.MethodDelete)
+
+	// image routes
+	ir := v1.PathPrefix("/image").Subrouter()
+	ir.HandleFunc("", middleware.PanicRecoverer(middleware.Authenticate(imageHandler.UploadToS3))).Methods(http.MethodPost)
 
 	httpServer := &http.Server{
 		Addr:     ":8000",
