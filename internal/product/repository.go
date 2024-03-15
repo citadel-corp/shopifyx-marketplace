@@ -8,12 +8,17 @@ import (
 
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/db"
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/response"
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
 type Repository interface {
 	Create(ctx context.Context, product *Product) error
 	List(ctx context.Context, filter ListProductPayload) ([]Product, *response.Pagination, error)
+	Update(ctx context.Context, product *Product) error
+	GetByUUID(ctx context.Context, uuid uuid.UUID) (*Product, error)
+	Patch(ctx context.Context, product *Product) error
+	Purchase(ctx context.Context, data PurchaseProductPayload) error
 }
 
 type DBRepository struct {
@@ -112,7 +117,7 @@ func (d *DBRepository) List(ctx context.Context, filter ListProductPayload) ([]P
 		switch filter.OrderBy {
 		case "asc":
 			orderBy = "asc"
-		case "dsc":
+		case "desc":
 			orderBy = "desc"
 		}
 	}
@@ -205,6 +210,126 @@ func (d *DBRepository) List(ctx context.Context, filter ListProductPayload) ([]P
 	}
 
 	return products, pagination, nil
+}
+
+func (d *DBRepository) Update(ctx context.Context, product *Product) error {
+	err := d.db.StartTx(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec(`
+				UPDATE products
+				SET name = $1,
+				price = $2,
+				image_url = $3,
+				condition = $4,
+				tags = $5
+				WHERE uid = $6
+				AND user_id = $7;
+			`,
+			product.Name, product.Price, product.ImageURL, product.Condition, pq.Array(product.Tags), product.UUID, product.User.ID)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	return err
+}
+
+func (d *DBRepository) GetByUUID(ctx context.Context, uuid uuid.UUID) (*Product, error) {
+	row := d.db.DB().QueryRowContext(ctx, `
+		SELECT p.uid, p.user_id, p.name, p.price, p.image_url, p.stock, p.condition, p.tags, p.is_purchaseable, p.purchase_count
+		FROM products p
+		WHERE uid = $1;
+	`, uuid)
+
+	var p Product
+	err := row.Scan(&p.UUID, &p.User.ID, &p.Name, &p.Price, &p.ImageURL, &p.Stock, &p.Condition, pq.Array(&p.Tags), &p.IsPurchasable, &p.PurchaseCount)
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+func (d *DBRepository) Patch(ctx context.Context, product *Product) error {
+	var columnCount int = 1
+	var args []interface{}
+
+	query := "UPDATE products SET"
+
+	if product.PurchaseCount != 0 {
+		query = fmt.Sprintf("%v purchase_count = $%d", query, columnCount)
+		args = append(args, product.PurchaseCount)
+		columnCount++
+	}
+
+	if product.Stock != 0 {
+		if len(args) > 0 {
+			query = fmt.Sprintf("%v, ", query)
+		}
+		query = fmt.Sprintf("%v stock = $%d", query, columnCount)
+		args = append(args, product.Stock)
+		columnCount++
+	}
+
+	query = fmt.Sprintf("%v WHERE uid = $%d;",
+		query, columnCount)
+	args = append(args, product.UUID)
+
+	err := d.db.StartTx(ctx, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, query, args...)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *DBRepository) Purchase(ctx context.Context, data PurchaseProductPayload) error {
+	err := d.db.StartTx(ctx, func(tx *sql.Tx) error {
+		// update product sold total
+		_, err := tx.ExecContext(ctx, `
+			UPDATE products
+			SET purchase_count = purchase_count + $1,
+			stock = stock - $2
+			WHERE uid = $3
+		`, data.Quantity, data.Quantity, data.ProductUID)
+		if err != nil {
+			return err
+		}
+
+		// update user transactions
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO user_transactions (
+				user_id, product_id, bank_account_id, image_url
+			) VALUES (
+				$1, $2, $3, $4
+			)
+		`, data.BuyerID, data.ProductUID, data.BankAccountID, data.PaymentProofImageURL)
+		if err != nil {
+			return err
+		}
+
+		// update seller
+		_, err = tx.ExecContext(ctx, `
+			UPDATE users
+			SET product_sold_total = product_sold_total + $1
+			WHERE id = $2
+		`, data.Quantity, data.SellerID)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func insertWhereStatement(condition bool, statement string) string {
