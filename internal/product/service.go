@@ -132,7 +132,7 @@ func (s *ProductService) Get(ctx context.Context, req GetProductPayload) Respons
 	product, err := s.repository.GetByUUID(ctx, req.ProductUID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return ErrorNoRecords
+			return ErrorNotFound
 		}
 		slog.Error("%s: error fetching product: %v", serviceName, err)
 		return ErrorInternal
@@ -197,13 +197,18 @@ func (s *ProductService) Purchase(ctx context.Context, req PurchaseProductPayloa
 	req.SellerID = product.User.ID
 
 	// check bank account validity
-	_, err = s.bankRepository.GetByUUID(ctx, req.BankAccountID)
+	acct, err := s.bankRepository.GetByUUID(ctx, req.BankAccountID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrorBadRequest
 		}
 		slog.Error("%s: error fetching bank: %v", serviceName, err)
 		return ErrorInternal
+	}
+
+	if acct.User.ID != req.SellerID {
+		slog.Error("%s: bank does not belong to product owner: %v", serviceName, err)
+		return ErrorBadRequest
 	}
 
 	err = s.repository.Purchase(ctx, req)
