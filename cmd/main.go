@@ -101,7 +101,7 @@ func main() {
 
 	// image routes
 	ir := v1.PathPrefix("/image").Subrouter()
-	ir.HandleFunc("", middleware.PanicRecoverer(middleware.Authenticate(imageHandler.UploadToS3))).Methods(http.MethodPost)
+	ir.HandleFunc("", middleware.PanicRecoverer(middleware.Authorized(imageHandler.UploadToS3))).Methods(http.MethodPost)
 
 	httpServer := &http.Server{
 		Addr:     ":8000",
