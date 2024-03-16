@@ -186,6 +186,13 @@ func (s *ProductService) Purchase(ctx context.Context, req PurchaseProductPayloa
 		return ErrorInternal
 	}
 
+	req.SellerID = product.User.ID
+
+	if req.SellerID == req.BuyerID {
+		slog.Error("%s: user cannot buy their own products", serviceName)
+		return ErrorForbidden
+	}
+
 	if !product.IsPurchasable {
 		return ErrorNotPurchasable
 	}
@@ -193,8 +200,6 @@ func (s *ProductService) Purchase(ctx context.Context, req PurchaseProductPayloa
 	if product.Stock < req.Quantity {
 		return ErrorInsufficientStock
 	}
-
-	req.SellerID = product.User.ID
 
 	// check bank account validity
 	acct, err := s.bankRepository.GetByUUID(ctx, req.BankAccountID)
