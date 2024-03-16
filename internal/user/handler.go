@@ -50,7 +50,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.JSON(w, http.StatusCreated, response.ResponseBody{
-		Message: "User created successfully",
+		Message: "User registered successfully",
 		Data:    userResp,
 	})
 }

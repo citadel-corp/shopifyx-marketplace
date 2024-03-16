@@ -3,6 +3,8 @@ package user
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/jwt"
@@ -41,7 +43,12 @@ func (s *userService) Create(ctx context.Context, req CreateUserPayload) (*UserR
 		return nil, err
 	}
 	// create access token with signed jwt
-	accessToken, err := jwt.Sign(time.Hour*24, fmt.Sprint(user.ID))
+	ttl, err := strconv.ParseInt(os.Getenv("JWT_TTL"), 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	accessToken, err := jwt.Sign(time.Second*time.Duration(ttl), fmt.Sprint(user.ID))
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +76,12 @@ func (s *userService) Login(ctx context.Context, req LoginPayload) (*UserRespons
 		return nil, ErrWrongPassword
 	}
 	// create access token with signed jwt
-	accessToken, err := jwt.Sign(time.Hour*24, fmt.Sprint(user.ID))
+	ttl, err := strconv.ParseInt(os.Getenv("JWT_TTL"), 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	accessToken, err := jwt.Sign(time.Second*time.Duration(ttl), fmt.Sprint(user.ID))
 	if err != nil {
 		return nil, err
 	}

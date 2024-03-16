@@ -1,7 +1,7 @@
 package product
 
 import (
-	"math"
+	"errors"
 
 	"github.com/google/uuid"
 	validation "github.com/itgelo/ozzo-validation/v4"
@@ -20,13 +20,18 @@ type CreateProductPayload struct {
 }
 
 func (p CreateProductPayload) Validate() error {
+	for i := range p.Tags {
+		if len(p.Tags[i]) == 0 {
+			return errors.New("tags must not be empty")
+		}
+	}
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.Name, validation.Required.Error(ErrorRequiredField.Message), validation.Length(5, 60)),
 		validation.Field(&p.Price, validation.Required.Error(ErrorRequiredField.Message), validation.Min(0)),
 		validation.Field(&p.ImageURL, validation.Required.Error(ErrorRequiredField.Message), is.URL),
 		validation.Field(&p.Stock, validation.Required.Error(ErrorRequiredField.Message), validation.Min(0)),
 		validation.Field(&p.Condition, validation.Required.Error(ErrorRequiredField.Message), validation.In(Conditions...)),
-		validation.Field(&p.Tags, validation.Required.Error(ErrorRequiredField.Message), validation.Length(0, math.MaxInt)),
+		validation.Field(&p.Tags, validation.Required.Error(ErrorRequiredField.Message)),
 		validation.Field(&p.IsPurchasable, validation.Required.Error(ErrorRequiredField.Message)),
 		validation.Field(&p.UserID, validation.Required.Error(ErrorForbidden.Message)),
 	)
@@ -82,13 +87,18 @@ type UpdateProductPayload struct {
 }
 
 func (p UpdateProductPayload) Validate() error {
+	for i := range p.Tags {
+		if len(p.Tags[i]) == 0 {
+			return errors.New("tags must not be empty")
+		}
+	}
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.ProductUID, validation.Required.Error(ErrorRequiredField.Message)),
 		validation.Field(&p.Name, validation.Required.Error(ErrorRequiredField.Message), validation.Length(5, 60)),
 		validation.Field(&p.Price, validation.Required.Error(ErrorRequiredField.Message), validation.Min(0)),
 		validation.Field(&p.ImageURL, validation.Required.Error(ErrorRequiredField.Message), is.URL),
 		validation.Field(&p.Condition, validation.Required.Error(ErrorRequiredField.Message), validation.In(Conditions...)),
-		validation.Field(&p.Tags, validation.Required.Error(ErrorRequiredField.Message), validation.Length(0, math.MaxInt)),
+		validation.Field(&p.Tags, validation.Required.Error(ErrorRequiredField.Message)),
 		validation.Field(&p.IsPurchasable, validation.Required.Error(ErrorRequiredField.Message)),
 		validation.Field(&p.UserID, validation.Required.Error(ErrorForbidden.Message)),
 	)

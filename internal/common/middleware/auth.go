@@ -21,6 +21,12 @@ func Authorized(next func(w http.ResponseWriter, r *http.Request)) func(w http.R
 			return
 		}
 
+		if len(tokenString) <= len("Bearer ") {
+			w.WriteHeader(http.StatusUnauthorized)
+			slog.InfoContext(r.Context(), "Invalid authorization header")
+			return
+		}
+
 		tokenString = tokenString[len("Bearer "):]
 		if tokenString == "" {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -49,11 +55,18 @@ func Authenticate(next func(w http.ResponseWriter, r *http.Request)) func(w http
 
 		tokenString := r.Header.Get("Authorization")
 		if tokenString == "" {
+			next(w, r)
+			return
+		}
+
+		if len(tokenString) <= len("Bearer ") {
+			next(w, r)
 			return
 		}
 
 		tokenString = tokenString[len("Bearer "):]
 		if tokenString == "" {
+			next(w, r)
 			return
 		}
 
