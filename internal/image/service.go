@@ -12,7 +12,6 @@ import (
 
 var (
 	bucket = os.Getenv("S3_BUCKET_NAME")
-	region = os.Getenv("S3_REGION")
 	key    = os.Getenv("S3_SECRET_KEY")
 )
 
