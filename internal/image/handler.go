@@ -56,8 +56,7 @@ func (h *Handler) UploadToS3(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	response.JSON(w, http.StatusOK, response.ResponseBody{
-		Message: "image uploaded succssully",
-		Data:    url,
+	response.JSON(w, http.StatusOK, map[string]string{
+		"imageUrl": url,
 	})
 }
