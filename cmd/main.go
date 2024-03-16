@@ -29,7 +29,9 @@ func main() {
 	slog.SetDefault(slog.New(slogHandler))
 
 	// Connect to database
-	db, err := db.Connect(os.Getenv("DB_URL"))
+	dbURL := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME"))
+	db, err := db.Connect(dbURL)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Cannot connect to database: %v", err))
 		os.Exit(1)
@@ -104,7 +106,7 @@ func main() {
 	ir.HandleFunc("", middleware.PanicRecoverer(middleware.Authorized(imageHandler.UploadToS3))).Methods(http.MethodPost)
 
 	httpServer := &http.Server{
-		Addr:     ":8000",
+		Addr:     fmt.Sprintf(":%s", os.Getenv("HTTP_PORT")),
 		Handler:  r,
 		ErrorLog: slog.NewLogLogger(slogHandler, slog.LevelError),
 	}

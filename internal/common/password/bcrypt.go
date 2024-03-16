@@ -2,12 +2,22 @@ package password
 
 import (
 	"errors"
+	"os"
+	"strconv"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
+var (
+	costStr = os.Getenv("BCRYPT_SALT")
+)
+
 func Hash(plaintextPassword string) (string, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plaintextPassword), 12)
+	cost, err := strconv.Atoi(costStr)
+	if err != nil {
+		return "", err
+	}
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plaintextPassword), cost)
 	if err != nil {
 		return "", err
 	}
