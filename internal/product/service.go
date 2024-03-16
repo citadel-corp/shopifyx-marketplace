@@ -188,11 +188,6 @@ func (s *ProductService) Purchase(ctx context.Context, req PurchaseProductPayloa
 
 	req.SellerID = product.User.ID
 
-	if req.SellerID == req.BuyerID {
-		slog.Error("%s: user cannot buy their own products", serviceName)
-		return ErrorForbidden
-	}
-
 	if !product.IsPurchasable {
 		return ErrorNotPurchasable
 	}
