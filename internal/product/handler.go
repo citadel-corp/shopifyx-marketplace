@@ -33,9 +33,6 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, ErrorUnauthorized.Error):
 			response.JSON(w, ErrorUnauthorized.Code, response.ResponseBody{})
 			return
-		case errors.Is(err, ErrorForbidden.Error):
-			response.JSON(w, ErrorForbidden.Code, response.ResponseBody{})
-			return
 		default:
 			response.JSON(w, http.StatusInternalServerError, response.ResponseBody{})
 			return
@@ -88,9 +85,6 @@ func (h *Handler) GetProductList(w http.ResponseWriter, r *http.Request) {
 			case errors.Is(err, ErrorUnauthorized.Error):
 				response.JSON(w, ErrorUnauthorized.Code, response.ResponseBody{})
 				return
-			case errors.Is(err, ErrorForbidden.Error):
-				response.JSON(w, ErrorForbidden.Code, response.ResponseBody{})
-				return
 			default:
 				response.JSON(w, http.StatusInternalServerError, response.ResponseBody{})
 				return
@@ -126,9 +120,6 @@ func (h *Handler) PatchProduct(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, ErrorUnauthorized.Error):
 			response.JSON(w, ErrorUnauthorized.Code, response.ResponseBody{})
-			return
-		case errors.Is(err, ErrorForbidden.Error):
-			response.JSON(w, ErrorForbidden.Code, response.ResponseBody{})
 			return
 		default:
 			response.JSON(w, http.StatusInternalServerError, response.ResponseBody{})
@@ -218,9 +209,6 @@ func (h *Handler) PurchaseProduct(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, ErrorUnauthorized.Error):
 			response.JSON(w, ErrorUnauthorized.Code, response.ResponseBody{})
 			return
-		case errors.Is(err, ErrorForbidden.Error):
-			response.JSON(w, ErrorForbidden.Code, response.ResponseBody{})
-			return
 		default:
 			response.JSON(w, http.StatusInternalServerError, response.ResponseBody{})
 			return
@@ -276,9 +264,6 @@ func (h *Handler) UpdateStockProduct(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, ErrorUnauthorized.Error):
 			response.JSON(w, ErrorUnauthorized.Code, response.ResponseBody{})
-			return
-		case errors.Is(err, ErrorForbidden.Error):
-			response.JSON(w, ErrorForbidden.Code, response.ResponseBody{})
 			return
 		default:
 			response.JSON(w, http.StatusInternalServerError, response.ResponseBody{})
@@ -336,9 +321,6 @@ func (h *Handler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, ErrorUnauthorized.Error):
 			response.JSON(w, ErrorUnauthorized.Code, response.ResponseBody{})
 			return
-		case errors.Is(err, ErrorForbidden.Error):
-			response.JSON(w, ErrorForbidden.Code, response.ResponseBody{})
-			return
 		default:
 			response.JSON(w, http.StatusInternalServerError, response.ResponseBody{})
 			return
@@ -392,7 +374,7 @@ func getUserID(r *http.Request) (uint64, error) {
 
 	if userID == 0 {
 		slog.Error("getUserID: userID is not set")
-		return 0, ErrorForbidden.Error
+		return 0, ErrorUnauthorized.Error
 	}
 
 	return userID, nil

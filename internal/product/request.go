@@ -33,7 +33,7 @@ func (p CreateProductPayload) Validate() error {
 		validation.Field(&p.Condition, validation.Required.Error(ErrorRequiredField.Message), validation.In(Conditions...)),
 		validation.Field(&p.Tags, validation.Required.Error(ErrorRequiredField.Message)),
 		validation.Field(&p.IsPurchasable, validation.Required.Error(ErrorRequiredField.Message)),
-		validation.Field(&p.UserID, validation.Required.Error(ErrorForbidden.Message)),
+		validation.Field(&p.UserID, validation.Required.Error(ErrorUnauthorized.Message)),
 	)
 }
 
@@ -64,7 +64,7 @@ type ListProductPayload struct {
 
 func (p ListProductPayload) Validate() error {
 	return validation.ValidateStruct(&p,
-		validation.Field(&p.UserID, validation.When(p.UserOnly, validation.Required.Error(ErrorForbidden.Message))),
+		validation.Field(&p.UserID, validation.When(p.UserOnly, validation.Required.Error(ErrorUnauthorized.Message))),
 		validation.Field(&p.Condition, validation.In(Conditions...)),
 		validation.Field(&p.MinPrice, validation.When(p.MaxPrice != 0, validation.Max(p.MaxPrice))),
 		validation.Field(&p.MaxPrice, validation.When(p.MinPrice != 0, validation.Min(p.MinPrice))),
@@ -100,7 +100,7 @@ func (p UpdateProductPayload) Validate() error {
 		validation.Field(&p.Condition, validation.Required.Error(ErrorRequiredField.Message), validation.In(Conditions...)),
 		validation.Field(&p.Tags, validation.Required.Error(ErrorRequiredField.Message)),
 		validation.Field(&p.IsPurchasable, validation.Required.Error(ErrorRequiredField.Message)),
-		validation.Field(&p.UserID, validation.Required.Error(ErrorForbidden.Message)),
+		validation.Field(&p.UserID, validation.Required.Error(ErrorUnauthorized.Message)),
 	)
 }
 
@@ -128,7 +128,7 @@ func (p PurchaseProductPayload) Validate() error {
 		validation.Field(&p.BankAccountID, validation.Required.Error(ErrorRequiredField.Message), is.UUID),
 		validation.Field(&p.PaymentProofImageURL, validation.Required.Error(ErrorRequiredField.Message), is.URL),
 		validation.Field(&p.Quantity, validation.Required.Error(ErrorRequiredField.Message), validation.Min(1)),
-		validation.Field(&p.BuyerID, validation.Required.Error(ErrorForbidden.Message)),
+		validation.Field(&p.BuyerID, validation.Required.Error(ErrorUnauthorized.Message)),
 	)
 }
 
@@ -141,7 +141,7 @@ type UpdateStockPayload struct {
 func (p UpdateStockPayload) Validate() error {
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.Stock, validation.Required.Error(ErrorRequiredField.Message), validation.Min(0)),
-		validation.Field(&p.UserID, validation.Required.Error(ErrorForbidden.Message)),
+		validation.Field(&p.UserID, validation.Required.Error(ErrorUnauthorized.Message)),
 	)
 }
 
@@ -152,6 +152,6 @@ type DeleteProductPayload struct {
 
 func (p DeleteProductPayload) Validate() error {
 	return validation.ValidateStruct(&p,
-		validation.Field(&p.UserID, validation.Required.Error(ErrorForbidden.Message)),
+		validation.Field(&p.UserID, validation.Required.Error(ErrorUnauthorized.Message)),
 	)
 }
