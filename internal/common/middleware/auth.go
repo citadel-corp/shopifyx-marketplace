@@ -36,7 +36,7 @@ func Authorized(next func(w http.ResponseWriter, r *http.Request)) func(w http.R
 
 		subject, err := jwt.VerifyAndGetSubject(tokenString)
 		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(http.StatusUnauthorized)
 			slog.InfoContext(r.Context(), "Invalid token: %v", err)
 			return
 		}
@@ -72,7 +72,7 @@ func Authenticate(next func(w http.ResponseWriter, r *http.Request)) func(w http
 
 		subject, err := jwt.VerifyAndGetSubject(tokenString)
 		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(http.StatusUnauthorized)
 			slog.InfoContext(r.Context(), "Invalid token: %v", err)
 			return
 		}
