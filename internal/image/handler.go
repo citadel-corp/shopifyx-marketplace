@@ -56,9 +56,8 @@ func (h *Handler) UploadToS3(w http.ResponseWriter, r *http.Request) {
 			response.JSON(w, http.StatusBadRequest, response.ResponseBody{
 				Message: "File is not a jpg/jpeg type",
 			})
+			return
 		}
-
-		return
 	}
 
 	url, err := h.service.UploadToS3(r.Context(), file, header.Filename)

@@ -103,6 +103,7 @@ func main() {
 	br := v1.PathPrefix("/bank").Subrouter()
 	br.HandleFunc("/account", middleware.PanicRecoverer(middleware.Authorized(bankAccountHandler.CreateBankAccount))).Methods(http.MethodPost)
 	br.HandleFunc("/account", middleware.PanicRecoverer(middleware.Authorized(bankAccountHandler.ListBankAccount))).Methods(http.MethodGet)
+	br.HandleFunc("/account", middleware.PanicRecoverer(middleware.Authorized(bankAccountHandler.PartialUpdateBankAccount))).Methods(http.MethodPatch)
 	br.HandleFunc("/account/{uuid}", middleware.PanicRecoverer(middleware.Authorized(bankAccountHandler.PartialUpdateBankAccount))).Methods(http.MethodPatch)
 	br.HandleFunc("/account/{uuid}", middleware.PanicRecoverer(middleware.Authorized(bankAccountHandler.DeleteBankAccount))).Methods(http.MethodDelete)
 
