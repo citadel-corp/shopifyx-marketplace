@@ -92,9 +92,9 @@ func (h *Handler) PartialUpdateBankAccount(w http.ResponseWriter, r *http.Reques
 	params := mux.Vars(r)
 	uid, err := uuid.Parse(params["uuid"])
 	if err != nil {
-		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
-			Message: "Failed to parse UUID",
-			Error:   err.Error(),
+		response.JSON(w, http.StatusNotFound, response.ResponseBody{
+			Message: "Not found",
+			Error:   ErrNotFound.Error(),
 		})
 		return
 	}
@@ -154,12 +154,13 @@ func (h *Handler) DeleteBankAccount(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	uid, err := uuid.Parse(params["uuid"])
 	if err != nil {
-		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
-			Message: "Failed to parse UUID",
-			Error:   err.Error(),
+		response.JSON(w, http.StatusNotFound, response.ResponseBody{
+			Message: "Not found",
+			Error:   ErrNotFound.Error(),
 		})
 		return
 	}
+
 	err = h.service.Delete(r.Context(), uid, userID)
 	if errors.Is(err, ErrNotFound) {
 		response.JSON(w, http.StatusNotFound, response.ResponseBody{
