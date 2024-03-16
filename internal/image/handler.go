@@ -2,6 +2,7 @@ package image
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/citadel-corp/shopifyx-marketplace/internal/common/response"
 )
@@ -48,9 +49,15 @@ func (h *Handler) UploadToS3(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 	mimeType := header.Header.Get("Content-Type")
 	if mimeType != "image/jpeg" {
-		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
-			Message: "File is not a jpg/jpeg type",
-		})
+		fileNameSplit := strings.Split(header.Filename, ".")
+		ext := fileNameSplit[len(fileNameSplit)-1]
+		isJPEG := ext == "jpeg" || ext == "jpg"
+		if mimeType == "application/octet-stream" && !isJPEG {
+			response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+				Message: "File is not a jpg/jpeg type",
+			})
+		}
+
 		return
 	}
 
