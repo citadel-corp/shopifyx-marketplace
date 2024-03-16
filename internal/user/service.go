@@ -41,7 +41,7 @@ func (s *userService) Create(ctx context.Context, req CreateUserPayload) (*UserR
 		return nil, err
 	}
 	// create access token with signed jwt
-	accessToken, err := jwt.Sign(time.Hour*2, fmt.Sprint(user.ID))
+	accessToken, err := jwt.Sign(time.Minute*2, fmt.Sprint(user.ID))
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (s *userService) Login(ctx context.Context, req LoginPayload) (*UserRespons
 		return nil, ErrWrongPassword
 	}
 	// create access token with signed jwt
-	accessToken, err := jwt.Sign(time.Hour*2, fmt.Sprint(user.ID))
+	accessToken, err := jwt.Sign(time.Minute*2, fmt.Sprint(user.ID))
 	if err != nil {
 		return nil, err
 	}
