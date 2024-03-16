@@ -24,6 +24,12 @@ func (h *Handler) UploadToS3(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	file, header, err := r.FormFile("file")
+	if file == nil {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Message: "File should not be empty",
+		})
+		return
+	}
 
 	if header.Size < 1024*10 {
 		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
