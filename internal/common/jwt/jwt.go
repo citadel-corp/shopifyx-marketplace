@@ -10,8 +10,7 @@ import (
 )
 
 var (
-	key     = []byte(os.Getenv("JWT_SECRET"))
-	baseURL = os.Getenv("BASE_URL")
+	key = []byte(os.Getenv("JWT_SECRET"))
 
 	ErrUnknownClaims = errors.New("unknown claims type")
 	ErrTokenInvalid  = errors.New("invalid token")
@@ -26,8 +25,6 @@ func Sign(ttl time.Duration, subject string) (string, error) {
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(expiry),
-			Issuer:    baseURL,
-			Audience:  jwt.ClaimStrings{baseURL},
 			Subject:   subject,
 		},
 	)

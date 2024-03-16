@@ -29,8 +29,13 @@ func main() {
 	slog.SetDefault(slog.New(slogHandler))
 
 	// Connect to database
-	dbURL := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME"))
+	env := os.Getenv("ENV")
+	sslMode := "disable"
+	if env == "production" {
+		sslMode = "verify-full rootcert=ap-southeast-1-bundle.pem"
+	}
+	dbURL := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME"), sslMode)
 	db, err := db.Connect(dbURL)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Cannot connect to database: %v", err))
@@ -61,7 +66,7 @@ func main() {
 
 	// initialize image domain
 	sess, err := session.NewSession(&aws.Config{
-		Region:      aws.String(os.Getenv("S3_REGION")),
+		Region:      aws.String("ap-southeast-1"),
 		Credentials: credentials.NewStaticCredentials(os.Getenv("S3_ID"), os.Getenv("S3_SECRET_KEY"), ""),
 	})
 	if err != nil {
@@ -106,7 +111,7 @@ func main() {
 	ir.HandleFunc("", middleware.PanicRecoverer(middleware.Authorized(imageHandler.UploadToS3))).Methods(http.MethodPost)
 
 	httpServer := &http.Server{
-		Addr:     fmt.Sprintf(":%s", os.Getenv("HTTP_PORT")),
+		Addr:     ":8000",
 		Handler:  r,
 		ErrorLog: slog.NewLogLogger(slogHandler, slog.LevelError),
 	}
