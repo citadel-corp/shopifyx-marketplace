@@ -38,11 +38,11 @@ func main() {
 	}
 
 	// Create migrations
-	err = db.UpMigration()
-	if err != nil {
-		slog.Error(fmt.Sprintf("Up migration failed: %v", err))
-		os.Exit(1)
-	}
+	// err = db.UpMigration()
+	// if err != nil {
+	// 	slog.Error(fmt.Sprintf("Up migration failed: %v", err))
+	// 	os.Exit(1)
+	// }
 
 	// initialize user domain
 	userRepository := user.NewRepository(db)
