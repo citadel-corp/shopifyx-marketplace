@@ -66,14 +66,14 @@ func (s *ProductService) List(ctx context.Context, req ListProductPayload) Respo
 	products, pagination, err := s.repository.List(ctx, req)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return ErrorNoRecords
+			return ErrorNotFound
 		}
 		slog.Error("%s: error fetching products list: %v", serviceName, err)
 		return ErrorInternal
 	}
 
 	if len(products) == 0 {
-		return ErrorNoRecords
+		return ErrorNotFound
 	}
 
 	for i := range products {

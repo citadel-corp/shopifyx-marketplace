@@ -70,8 +70,11 @@ func (d *DBRepository) List(ctx context.Context, filter ListProductPayload) ([]P
 	}
 
 	if len(filter.Tags) > 0 {
+		whereStatement = insertWhereStatement(len(args) > 0, whereStatement)
 		for i := range filter.Tags {
-			whereStatement = insertWhereStatement(i > 0, whereStatement)
+			if i > 0 {
+				whereStatement = fmt.Sprintf("%v AND ", whereStatement)
+			}
 			whereStatement = fmt.Sprintf("%s $%d = ANY(products.tags)", whereStatement, columnCtr)
 			args = append(args, filter.Tags[i])
 			columnCtr++
