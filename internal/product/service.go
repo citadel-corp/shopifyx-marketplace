@@ -204,7 +204,7 @@ func (s *ProductService) Purchase(ctx context.Context, req PurchaseProductPayloa
 	// check bank account validity
 	acct, err := s.bankRepository.GetByUUID(ctx, req.BankAccountID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, bankaccount.ErrNotFound) {
 			return ErrorBadRequest
 		}
 		slog.Error("%s: error fetching bank: %v", serviceName, err)
