@@ -32,7 +32,7 @@ func main() {
 	env := os.Getenv("ENV")
 	sslMode := "disable"
 	if env == "production" {
-		sslMode = "verify-full rootcert=ap-southeast-1-bundle.pem"
+		sslMode = "verify-full sslrootcert=ap-southeast-1-bundle.pem"
 	}
 	dbURL := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME"), sslMode)
