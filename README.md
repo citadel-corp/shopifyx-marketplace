@@ -1,6 +1,6 @@
 # citadel-corp/shopifyx-marketplace
 
-API for Marketplace service.
+I'm Commander Shepard, and This Is My Favorite 'Marketplace Service' on the Citadel
 
 🔍 Tested with
 [this k6 script](https://github.com/nandanugg/MarketplaceTestCases).
