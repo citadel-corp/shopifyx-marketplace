@@ -100,13 +100,6 @@ To run with certain number of iterations and virtual users:
 $ k6 run -i NUMBER_OF_ITERATIONS --vus NUMBER_OF_VIRTUAL_USERS script.js
 ```
 
-## Built With
-
-  - [Contributor Covenant](https://www.contributor-covenant.org/) - Used
-    for the Code of Conduct
-  - [Creative Commons](https://creativecommons.org/) - Used to choose
-    the license
-
 ## Authors
 
 The [Citadel Corp](https://github.com/citadel-corp) team:
